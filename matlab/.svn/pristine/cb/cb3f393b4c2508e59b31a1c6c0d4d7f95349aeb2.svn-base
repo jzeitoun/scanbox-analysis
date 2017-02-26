@@ -1,0 +1,49 @@
+function r = sbxsparsenoise(fname)
+
+% analyze sparse noise experiment
+
+log = sbxreadsparsenoiselog(fname); % read log
+load([fname '.signals'],'-mat');
+sig = medfilt1(sig,11);             % median filter
+sig = zscore(sig);
+dsig = diff(sig);    
+p = prctile(dsig,65);
+dsig = bsxfun(@minus,dsig,p);
+dsig = dsig .* (dsig>0);
+dsig = zscore(dsig);
+
+ncell = size(dsig,2);
+nstim = size(log,1);
+
+r = zeros(max(log.xpos),max(log.ypos),13,2,ncell);
+
+h = waitbar(0,'Processing...');
+for(i=1:nstim)
+    if(log.mean(i)==0)  % rf map for dark spots
+        r(log.xpos(i),log.ypos(i),:,1,:) =  squeeze(r(log.xpos(i),log.ypos(i),:,1,:)) + ...
+            dsig(log.sbxborn(i)-2:log.sbxborn(i)+10,:);
+    else                % rf map for brigths spots
+        r(log.xpos(i),log.ypos(i),:,2,:) =  squeeze(r(log.xpos(i),log.ypos(i),:,2,:)) + ...
+            dsig(log.sbxborn(i)-2:log.sbxborn(i)+10,:);
+    end
+    waitbar(i/nstim,h);
+end
+delete(h);
+
+h = fspecial('gauss',250,40);
+hh = waitbar(0,'Filtering...');
+k = 0;
+for(t=1:13)
+    for (b = 1:2)
+        for(n = 1:ncell)
+            r(:,:,t,b,n) = filter2(h,squeeze(r(:,:,t,b,n)),'same');
+            k = k+1;
+            waitbar(k/(13*2*ncell),hh);
+        end
+    end
+end
+delete(hh);
+
+% save([fname '.sparsenoise'],'r','-v7.3');
+
+

@@ -1,0 +1,8 @@
+function mm = sbxreadmmap(fname)
+
+
+d = dir([fname '.sbx']);
+i = load(fname);
+max_idx = d.bytes / prod(i.info.sz) / i.info.channels;
+
+mm = memmapfile([fname '.sbx'],'Format',{'uint16' [info.nchan 796 512 info.max_idx] 'img'},'Repeat',1);
