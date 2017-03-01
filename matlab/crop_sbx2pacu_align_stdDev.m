@@ -137,7 +137,6 @@ else
     info.recordsPerBuffer = m;
 end
 info.sz = [m n];
-info.resfreq = 7918
 save(['Aligned_' fname '.mat'],'info');
 
 % Calculate standard deviation and write to file
