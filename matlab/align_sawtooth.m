@@ -1,4 +1,4 @@
-function align_sawtooth(fname)
+function align_sawtooth(fname,varargin)
 % Aligns recorings made with the optotune sawtooth waveform.
 % Only intended for single-channel data.
 
@@ -46,18 +46,47 @@ mean_of_templates = 1:200;
 tic;
 
 % generate templates for each plane
-fprintf('Determining brightest image to use as template...\n');
-for n = 1:num_planes
-    slice = intmax('uint16') - permute(original_mapped_data.Data.img(left_margin:end,:,n:num_planes:num_planes*200),[2 1 3]);
-    for i = 1:200
-        frame = slice(:,:,i);
-        mean_of_templates(i) = mean(frame(:));
+if nargin > 1
+    template_indices = varargin{1};
+    if size(template_indices) ~= [1 num_planes]
+        error('Error. Length of template array must be equal to %i.',num_planes);
     end
-    [~,brightest_idx] = max(mean_of_templates);
-    template_array(:,:,n) = slice(:,:,brightest_idx);
+    for i = 1:num_planes
+        idx = template_indices(i);
+        if idx > 0
+            % set template to user-defined index for this plane
+            template_array(:,:,i) = intmax('uint16') - permute(original_mapped_data.Data.img(left_margin:end,:,idx),[2 1 3]);
+            fprintf('Index %i selected as template for plane %i.\n',idx,i-1);
+        else
+            % use automated method for determining template for this plane
+            slice = intmax('uint16') - permute(original_mapped_data.Data.img(left_margin:end,:,i:num_planes:num_planes*200),[2 1 3]);
+            for n = 1:200
+                frame = slice(:,:,n);
+                mean_of_templates(n) = mean(frame(:));
+            end
+            [~,brightest_idx] = max(mean_of_templates);
+            template_array(:,:,i) = slice(:,:,brightest_idx);     
+            fprintf('Automated template selection used for plane %i.\n',i-1);
+        end
+    end
+else
+    fprintf('Using automated method to determine brightest template image for all planes...\n');
+    for n = 1:num_planes
+        slice = intmax('uint16') - permute(original_mapped_data.Data.img(left_margin:end,:,n:num_planes:num_planes*200),[2 1 3]);
+        for i = 1:200
+            frame = slice(:,:,i);
+            mean_of_templates(i) = mean(frame(:));
+        end
+        [~,brightest_idx] = max(mean_of_templates);
+        template_array(:,:,n) = slice(:,:,brightest_idx);
+    end
 end
 
-parpool(num_cores);
+% create parallel pool if none exists
+pool = gcp('nocreate');
+if isempty(pool)
+    parpool(num_cores);
+end
 fprintf('Aligning...\n');
 
 % align frames in parallel
@@ -72,8 +101,10 @@ end
 % Write the metadata file, modify fields for newly cropped dimensions
 load([fname '.mat']);
 info.sz = [rows cols-left_margin+1];
+info.originalRecordsPerBuffer = info.recordsPerBuffer;
 save(['Aligned_' fname '.mat'],'info');
     
 alignTime = toc;
-fprintf('Aligned all %d frames in %d seconds.\n', max_idx, alignTime);
+fprintf('Aligned all %d frames in %f seconds.\n', max_idx, alignTime);
+fprintf('Alignment speed: %f frames/sec.\n', max_idx/alignTime);
 
