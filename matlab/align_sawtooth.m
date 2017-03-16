@@ -20,7 +20,6 @@ else
 end
 
 % create memory map to original data
-
 original_mapped_data = memmapfile([fname '.sbx'],'Format',{'uint16' [cols rows max_idx] 'img'},'Repeat',1);
 
 % create new file to hold aligned data and memory map it
