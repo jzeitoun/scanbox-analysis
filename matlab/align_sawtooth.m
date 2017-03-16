@@ -10,12 +10,13 @@ rows = info.sz(1);
 cols = info.sz(2);
 num_planes = info.otparam(3);
 num_cores = feature('numCores');
+originalRecordsPerBuffer = info.recordsPerBuffer;
 
 % if bidirectional mode, remove left 100 pixels
 if info.scanmode == 0
     left_margin = 101;
 else
-    left_margin = 1;
+    left_margin = 1; 
 end
 
 % create memory map to original data
@@ -101,7 +102,7 @@ end
 % Write the metadata file, modify fields for newly cropped dimensions
 load([fname '.mat']);
 info.sz = [rows cols-left_margin+1];
-info.originalRecordsPerBuffer = info.recordsPerBuffer;
+info.originalRecordsPerBuffer = originalRecordsPerBuffer;
 save(['Aligned_' fname '.mat'],'info');
     
 alignTime = toc;
