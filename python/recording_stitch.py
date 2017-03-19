@@ -24,10 +24,18 @@ class stitched_data(object):
         for merged_roi in self.merged_rois:
 	    merged_roi.refresh()
 
+    def sorted_orientation_traces(self, merged_roi):
+        sorted_orientation_traces = {str(roi.workspace.name):{} for roi in merged_roi.rois}
+        for k in sorted_orientation_traces.keys():
+            sorted_orientation_traces[k] = [dict(dtorientationsmean.attributes.items()[i] for i in [8,17]) for roi in merged_roi.rois for dtorientationsmean in roi.dtorientationsmeans if roi.workspace.name == k]
+	return sorted_orientation_traces
+	
     def export_mat(self):
         merged_dict = {}
 	merged_dict['filenames'] = [fw[0][:-3] for fw in fw_array]
 	merged_dict['workspaces'] = [workspace.name for workspace in self.workspaces]
 	merged_dict['rois'] = self.roi_dict 
+	for merged_roi in self.merged_rois: 
+	   merged_dict['rois']['{}{}'.format('id_',merged_roi.rois[0].id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
         sio.savemat(fw_array[0][0][:-3] + '_merged.mat',{'merged_dict':merged_dict})             
 

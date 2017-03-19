@@ -38,9 +38,10 @@ def _todict(matobj):
             dict[strg] = elem
     return dict
     
-def sbxread(filename,k,N):
+def sbxread(filename):
     '''
-    Input: filename should be full path excluding .sbx
+    Reads metadata file associated with 'filename'.
+    'filename' should be full path excluding .sbx
     '''
     # Check if contains .sbx and if so just truncate
     if '.sbx' in filename:
@@ -48,7 +49,6 @@ def sbxread(filename,k,N):
     
     # Load info
     info = loadmat(filename + '.mat')['info']
-    #print info.keys()
     
     # Defining number of channels/size factor
     if info['channels'] == 1:
@@ -64,19 +64,6 @@ def sbxread(filename,k,N):
     # Determine number of frames in whole file (removed '-1')
     info['length'] = os.path.getsize(filename + '.sbx')/info['recordsPerBuffer']/info['sz'][1]*factor/4
     
-    # Paramters
-    #k = 0; #First frame
-    #N = max_idx; #Last frame
-    
     info['nSamples'] = info['sz'][1] * info['recordsPerBuffer'] * 2 * info['nChan']
      
-    # Open File
-    fo = open(filename + '.sbx')
-     
-    # Note: There is a weird inversion that happns thus I am dding the negative sign....
-    fo.seek(k*info['nSamples'], 0)
-    x = np.fromfile(fo, dtype = 'uint16',count = info['nSamples']/2*N)
-    
-    #x = -x.reshape((info['nChan'], info['sz'][1], info['recordsPerBuffer'], N), order = 'F')
-    
     return info

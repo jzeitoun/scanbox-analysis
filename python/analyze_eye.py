@@ -8,9 +8,8 @@ def analyze_eye(fname,write=0):
     Calculates pupil area and angular rotation  and saves data as .npy file.
     If write = 1, will also write out data with tracked pupil.
     '''
-    
     bounding_region = 80 # restricts pupil search to +/- this value from the center
-    r_effective = 1.25
+    r_effective = 1.25 # radius of pupil to center of eyeball
     pixels_per_mm = 100.0
 
     # read in eye data
