@@ -14,7 +14,7 @@ from sbxread import *
 if __name__ == '__main__':
     
     fname = sys.argv[1]
-    info = sbxread(fname,0,1)
+    info = sbxread(fname)
     mapped_data = np.memmap(fname + '.sbx', dtype='uint16', shape=(info['length'], info['sz'][0], info['sz'][1]))
     transform_file = tempfile.mktemp()
     transforms = np.memmap(transform_file, dtype='int64', mode = 'w+', shape =(info['length'],2))

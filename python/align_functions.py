@@ -10,8 +10,6 @@ import time
 from sklearn.utils.extmath import cartesian
 from numba import jit
 
-from sbxread import *
-
 def computeT(tVals):  # think about using concatenate instead of append
     t = tVals**2
     a = t.cumsum(0).cumsum(1)
