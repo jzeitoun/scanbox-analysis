@@ -19,8 +19,15 @@ if __name__ == '__main__':
     transform_file = tempfile.mktemp()
     transforms = np.memmap(transform_file, dtype='int64', mode = 'w+', shape =(info['length'],2))
     template = np.uint16(np.mean(mapped_data[20:40,:], 0))
+
+    # need to crop left margin if data is bidirectional
+    if info['scanmode'] == 0:
+        info['sz'][1] = info['sz'][1]-100
+	template = template[:,100:]
+
     ds_template = cv2.pyrDown(template)
-    
+   
+
     print 'Allocating space for aligned data...'
     output_data = np.memmap('Moco_Aligned_' + fname + '.sbx', dtype='uint16', shape=(info['length'], info['sz'][0], info['sz'][1]), mode = 'w+')
     
@@ -31,7 +38,7 @@ if __name__ == '__main__':
     q = Queue()
     
     print 'Creating processes...'
-    processes = [Process(target=align_purepy, args=(fname,indices,template,ds_template, info['length'], info['sz'][0], info['sz'][1], transform_file, q)) for indices in core_assignments]
+    processes = [Process(target=align_purepy, args=(fname,indices,template,ds_template, info['length'], info['sz'][0], info['sz'][1], transform_file, q, info['scanmode'])) for indices in core_assignments]
     
     start = time.time()
 

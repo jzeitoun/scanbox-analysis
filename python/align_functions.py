@@ -42,7 +42,7 @@ def find_z(cx,cy,cart,f_moving,f_template,Lx,Rx,Ly,Ry,xy,xy2,rows,cols):
     newXY = np.array([np.arange(-1,2)[minIDX[1]]+xy[0],np.arange(-1,2)[minIDX[0]]+xy[1]]).reshape([2,])
     return newXY
 
-def align_purepy(fname, idx_range, template, ds_template, length, height, width, transform_file, queue, w=15):
+def align_purepy(fname, idx_range, template, ds_template, length, height, width, transform_file, queue, scanmode, w=15):
     
     mapped_data = np.memmap(fname + '.sbx', dtype='uint16', shape=(length,height,width))
 
@@ -68,6 +68,9 @@ def align_purepy(fname, idx_range, template, ds_template, length, height, width,
     
     for idx in idx_range:
         moving = mapped_data[idx]
+	# need to crop left margin if data is bidirectional
+	if scanmode == 0:
+	    moving = moving[:,100:]
         ds_moving = cv2.pyrDown(moving)
         rows = ds_moving.shape[0]
         cols = ds_moving.shape[1]
