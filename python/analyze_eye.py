@@ -15,8 +15,6 @@ def analyze_eye(fname,write=0):
     # read in eye data
     data = h5py.File(fname + '.mat')
     eye_data = np.squeeze(np.array(data['data'])).transpose(0,2,1)
-    if len(eye_data.shape) > 3:
-        eye_data = eye_data[:,:,:,0]
 
     eye_data_center = np.array(eye_data.shape[1:3])/2 # find center of entire frame
     area_trace = np.zeros(eye_data.shape[0]) # pupillary area in mm^2
