@@ -42,9 +42,9 @@ def find_z(cx,cy,cart,f_moving,f_template,Lx,Rx,Ly,Ry,xy,xy2,rows,cols):
     newXY = np.array([np.arange(-1,2)[minIDX[1]]+xy[0],np.arange(-1,2)[minIDX[0]]+xy[1]]).reshape([2,])
     return newXY
 
-def align_purepy(fname, idx_range, template, ds_template, length, height, width, transform_file, queue, scanmode, w=15):
+def align_purepy(fname, idx_range, template, ds_template, length, height, mapped_width, width, transform_file, queue, scanmode, w=15):
     
-    mapped_data = np.memmap(fname + '.sbx', dtype='uint16', shape=(length,height,width))
+    mapped_data = np.memmap(fname + '.sbx', dtype='uint16', shape=(length,height,mapped_width))
 
     output_data = np.memmap('Moco_Aligned_' + fname + '.sbx', dtype='uint16', shape=(length, height, width)) 
 

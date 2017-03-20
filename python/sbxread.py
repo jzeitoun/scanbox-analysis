@@ -67,3 +67,13 @@ def sbxread(filename):
     info['nSamples'] = info['sz'][1] * info['recordsPerBuffer'] * 2 * info['nChan']
      
     return info
+
+def sbxmap(filename):
+    '''
+    Creates memory map to .sbx file.
+    '''
+    info = sbxread(filename)
+
+    mapped_data = np.memmap(filename,dtype='uint16',shape=(info['length'],info['sz'][0],info['sz'][1]))
+
+    return mapped_data

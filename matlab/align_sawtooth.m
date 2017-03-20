@@ -1,8 +1,21 @@
-function align_sawtooth(fname,varargin)
-% Aligns recorings made with the optotune sawtooth waveform.
+function align_sawtooth(filename,varargin)
+% Nonrigid alignment of recorings made with the optotune sawtooth waveform.
 % Only intended for single-channel data.
+% 'filename' is the name of the sbx file without '.sbx'
+% Optional argument that allows manual selection of the template image:
+%  - Must be an array of length == number of planes.
+%  - The value of each index will be the index of the template image for
+%       the corresponding plane.
+%  - Assign a value of 0 to any indices for which you want to use automated
+%       template selection.
+%  - Keep in mind, the planes are interleaved so be sure to select each 
+%       index from the correct set of frames; e.g. 3 planes will be
+%       interleaved as 1,2,3,1,2,3,1,2,3,...
+%  - Example: [1 0 3] will use the frame 1 and 3 as the templates for
+%       planes 1 and 3, respectively, while the template for plane 2 will
+%       be selected automatically.
 
-sbx = sbxread(fname,1,1);
+sbx = sbxread(filename,1,1);
 global info;
 
 max_idx = info.max_idx;
@@ -20,15 +33,15 @@ else
 end
 
 % create memory map to original data
-original_mapped_data = memmapfile([fname '.sbx'],'Format',{'uint16' [cols rows max_idx] 'img'},'Repeat',1);
+original_mapped_data = memmapfile([filename '.sbx'],'Format',{'uint16' [cols rows max_idx] 'img'},'Repeat',1);
 
 % create new file to hold aligned data and memory map it
 fprintf('Allocating space for aligned data...\n');
-f = fopen(['Aligned_' fname '.sbx'],'w');
+f = fopen(['Aligned_' filename '.sbx'],'w');
 fclose(f);
 size_in_bytes = 2 * (cols-left_margin+1) * rows * max_idx;
-FileResize(['Aligned_' fname '.sbx'],size_in_bytes);
-aligned_mapped_data = memmapfile(['Aligned_' fname '.sbx'],'Format',{'uint16' [cols-left_margin+1 rows max_idx] 'img'},'Repeat',1,'Writable',true);
+FileResize(['Aligned_' filename '.sbx'],size_in_bytes);
+aligned_mapped_data = memmapfile(['Aligned_' filename '.sbx'],'Format',{'uint16' [cols-left_margin+1 rows max_idx] 'img'},'Repeat',1,'Writable',true);
 
 % create array to hold template images
 fill = uint16(0);
@@ -99,12 +112,13 @@ parfor i = 1:max_idx
 end
 
 % Write the metadata file, modify fields for newly cropped dimensions
-load([fname '.mat']);
+load([filename '.mat']);
 info.sz = [rows cols-left_margin+1];
 info.originalRecordsPerBuffer = originalRecordsPerBuffer;
-save(['Aligned_' fname '.mat'],'info');
+save(['Aligned_' filename '.mat'],'info');
     
-alignTime = toc;
-fprintf('Aligned all %d frames in %f seconds.\n', max_idx, alignTime);
-fprintf('Alignment speed: %f frames/sec.\n', max_idx/alignTime);
+align_time = toc;
+fprintf('Aligned all %d frames in %f seconds.\n', max_idx, align_time);
+fprintf('Alignment speed: %f frames/sec.\n', max_idx/align_time);
 
+end

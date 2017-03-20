@@ -19,7 +19,7 @@ if __name__ == '__main__':
     transform_file = tempfile.mktemp()
     transforms = np.memmap(transform_file, dtype='int64', mode = 'w+', shape =(info['length'],2))
     template = np.uint16(np.mean(mapped_data[20:40,:], 0))
-
+    mapped_width = info['sz'][1]
     # need to crop left margin if data is bidirectional
     if info['scanmode'] == 0:
         info['sz'][1] = info['sz'][1]-100
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     q = Queue()
     
     print 'Creating processes...'
-    processes = [Process(target=align_purepy, args=(fname,indices,template,ds_template, info['length'], info['sz'][0], info['sz'][1], transform_file, q, info['scanmode'])) for indices in core_assignments]
+    processes = [Process(target=align_purepy, args=(fname,indices,template,ds_template, info['length'], info['sz'][0], mapped_width, info['sz'][1], transform_file, q, info['scanmode'])) for indices in core_assignments]
     
     start = time.time()
 
@@ -63,6 +63,12 @@ if __name__ == '__main__':
     print 'Finished. Aligned %d frames in %d seconds' % (max_aligned_idx, time.time() - start)
     
     np.save('Moco_Aligned_' + fname + '_trans',transforms)
+    spio_info = loadmat(fname + '.mat')
+    
+    #import ipdb; ipdb.set_trace()
+
+    spio_info['info']['sz'] = info['sz']
+    spio.savemat('Moco_Aligned_' + fname + '.mat',{'info':spio_info['info']})
 
     del transforms
     _ = gc.collect()
