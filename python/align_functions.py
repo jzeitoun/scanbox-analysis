@@ -8,7 +8,6 @@ import tempfile
 import time
 
 from sklearn.utils.extmath import cartesian
-from numba import jit
 
 def computeT(tVals):  # think about using concatenate instead of append
     t = tVals**2
