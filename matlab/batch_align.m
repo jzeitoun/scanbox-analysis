@@ -1,5 +1,6 @@
 function batch_align(align_function)
 % Aligns all files in directory using alignment function specified.
+% 'align_function' must include quotes; e.g. batch_align('align_sawtooth')
 
 d = dir('*.sbx');
 
