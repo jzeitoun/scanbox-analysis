@@ -11,13 +11,13 @@ def analyze_eye(filename,write=0):
     # restricts pupil search to +/- this value from the center
     if 'eye2' in filename:
         bounding_region = 100
-        thresh_val = 60 
+        thresh_val = 52 
     else:
         bounding_region = 80
         thresh_val = 44
     r_effective = 1.25 # radius of pupil to center of eyeball
     pixels_per_mm = 100.0
-    print 'Using threshold of: ', thresh_val
+    print 'Using threshold value of: ', thresh_val
 
     # read in eye data
     data = h5py.File(filename + '.mat')
