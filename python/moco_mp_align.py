@@ -59,14 +59,13 @@ if __name__ == '__main__':
             break
 
     max_aligned_idx = max(q_list)
-        
-    print 'Finished. Aligned %d frames in %d seconds' % (max_aligned_idx, time.time() - start)
-    
+    elapsed_time = time.time() - start 
+
+    print 'Finished. Aligned %d frames in %d seconds' % (max_aligned_idx, elapsed_time)
+    print 'Alignment speed: %d frames/sec' % (max_aligned_idx/elapsed_time)
+
     np.save('Moco_Aligned_' + fname + '_trans',transforms)
     spio_info = loadmat(fname + '.mat')
-    
-    #import ipdb; ipdb.set_trace()
-
     spio_info['info']['sz'] = info['sz']
     spio.savemat('Moco_Aligned_' + fname + '.mat',{'info':spio_info['info']})
 
