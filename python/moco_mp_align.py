@@ -49,7 +49,7 @@ if __name__ == '__main__':
     q = Queue()
     
     print 'Creating processes...'
-    processes = [Process(target=align_purepy, args=(filename,indices,template,ds_template, info['length'], info['sz'][0], info['sz'][1], transform_file, q, info['scanmode'])) for indices in core_assignments]
+    processes = [Process(target=align_purepy, args=(filename,indices,template,ds_template, info['length'], info['sz'][0], mapped_width, info['sz'][1], transform_file, q, info['scanmode'])) for indices in core_assignments]
     
     start = time.time()
 
