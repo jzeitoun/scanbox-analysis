@@ -78,6 +78,6 @@ def sbxmap(filename):
     
     info = sbxread(filename)
 
-    mapped_data = np.memmap(filename,dtype='uint16',shape=(info['length'],info['sz'][0],info['sz'][1]))
+    mapped_data = np.memmap(filename + '.sbx',dtype='uint16',shape=(info['length'],info['sz'][0],info['sz'][1]))
 
     return mapped_data
