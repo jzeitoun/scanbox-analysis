@@ -72,6 +72,10 @@ def sbxmap(filename):
     '''
     Creates memory map to .sbx file.
     '''
+
+    if '.sbx' in filename:
+         filename = filename[:-4]
+    
     info = sbxread(filename)
 
     mapped_data = np.memmap(filename,dtype='uint16',shape=(info['length'],info['sz'][0],info['sz'][1]))
