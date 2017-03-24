@@ -3,7 +3,7 @@ import scipy.io as sio
 import os
 
 from pacu.core.io.scanbox.impl2 import ScanboxIO
-from pacu.core.io.scanbox.view.trial_merged_roi import TrialMergedROIViewByCentroid
+from pacu.core.io.scanbox.view.trial_merged_roi import TrialMergedROIView
 
 #import paramiko
 #from paramiko.client import SSHClient, SFTPClient
@@ -19,10 +19,10 @@ class stitched_data(object):
         self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in fw_array]
         self.workspaces = [workspace for data,fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
         self.rois = [workspace.rois for data, fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
-        self.merged_rois = [TrialMergedROIViewByCentroid(roi.centroid,*self.workspaces) for roi in self.rois[0]] 
+        self.merged_rois = [TrialMergedROIView(roi.id,*self.workspaces) for roi in self.rois[0]] 
         self.refresh_all()
 	self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
-	self.sftp = self.create_SFTP()
+	#self.sftp = self.create_SFTP()
 
     def refresh_all(self):
         for merged_roi in self.merged_rois:
