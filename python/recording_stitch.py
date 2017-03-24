@@ -5,8 +5,8 @@ import os
 from pacu.core.io.scanbox.impl2 import ScanboxIO
 from pacu.core.io.scanbox.view.trial_merged_roi import TrialMergedROIViewByCentroid
 
-import paramiko
-from paramiko.client import SSHClient, SFTPClient
+#import paramiko
+#from paramiko.client import SSHClient, SFTPClient
 
 class stitched_data(object):
     '''
