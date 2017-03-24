@@ -8,6 +8,7 @@ import tempfile
 import time
 
 from sklearn.utils.extmath import cartesian
+from sbxread import *
 
 def computeT(tVals):  # think about using concatenate instead of append
     t = tVals**2
@@ -42,11 +43,12 @@ def find_z(cx,cy,cart,f_moving,f_template,Lx,Rx,Ly,Ry,xy,xy2,rows,cols):
     newXY = np.array([np.arange(-1,2)[minIDX[1]]+xy[0],np.arange(-1,2)[minIDX[0]]+xy[1]]).reshape([2,])
     return newXY
 
-def align_purepy(fname, idx_range, template, ds_template, length, height, mapped_width, width, transform_file, queue, scanmode, w=15):
+def align_purepy(filename, idx_range, template, ds_template, length, height, mapped_width, width, transform_file, queue, scanmode, w=15):
     
-    mapped_data = np.memmap(fname + '.sbx', dtype='uint16', shape=(length,height,mapped_width))
+    #mapped_data = np.memmap(filename + '.sbx', dtype='uint16', shape=(length,height,mapped_width))
+    mapped_data = sbxmap(filename + '.sbx')
 
-    output_data = np.memmap('Moco_Aligned_' + fname + '.sbx', dtype='uint16', shape=(length, height, width)) 
+    output_data = np.memmap('Moco_Aligned_' + filename + '.sbx', dtype='uint16', shape=(length, height, width)) 
 
     transforms = np.memmap(transform_file, dtype='int64', shape =(length,2))
     
