@@ -21,7 +21,8 @@ if __name__ == '__main__':
     mapped_data = sbxmap(filename + '.sbx') #np.memmap(filename + '.sbx', dtype='uint16', shape=(info['length'], info['sz'][0], info['sz'][1]))
     transform_file = tempfile.mktemp()
     transforms = np.memmap(transform_file, dtype='int64', mode = 'w+', shape =(info['length'],2))
-   
+    mapped_width = info['sz'][1]
+
     # if second filename is supplied, use template from that file for alignment
     if len(sys.argv) > 2:
         align_filename = sys.argv[2]
