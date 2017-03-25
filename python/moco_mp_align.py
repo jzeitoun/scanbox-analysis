@@ -1,5 +1,4 @@
-i
-port multiprocessing
+import multiprocessing
 from multiprocessing import Process, Queue
 from Queue import Empty
 import os
