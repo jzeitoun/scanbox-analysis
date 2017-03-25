@@ -14,19 +14,19 @@ class stitched_data(object):
     Argument should be list of tuples with the filename first and the workspace name second.
     Example: stitched_dataset = stitched_data([('Day1_000_000','Workspace_1'),('Day1_000_001',Workspace_1')])
     '''
-    def __init__(self,fw_array):
+    def __init__(self,self.fw_array):
+        self.self.fw_array = self.fw_array
 	self.path = os.getcwd()
-        self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in fw_array]
-        self.workspaces = [workspace for data,fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
-        #self.rois = [workspace.rois for data, fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
-        self.rois = self.find_matched_rois(fw_array) 
+        self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in self.self.fw_array]
+        self.workspaces = [workspace for data,fw in zip(self.io, self.fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
+        self.rois = self.find_matched_rois(self.fw_array) 
         self.merged_rois = [TrialMergedROIView(roi.id,*self.workspaces) for roi in self.rois[0]] 
         self.refresh_all()
 	self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
 	#self.sftp = self.create_SFTP()
     
-    def find_matched_rois(self,fw_array):
-        rois = [workspace.rois for data, fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]    
+    def find_matched_rois(self):
+        rois = [workspace.rois for data, fw in zip(self.io, self.fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]    
         id_sets = [[roi.id for roi in roi_list] for roi_list in rois]
         list_lengths = [len(s) for s in id_sets]
         shortest_idx = list_lengths.index(min(list_lengths))
@@ -47,12 +47,12 @@ class stitched_data(object):
     	
     def export_mat(self):
         merged_dict = {}
-	merged_dict['filenames'] = [fw[0][:-3] for fw in fw_array]
+	merged_dict['filenames'] = [fw[0][:-3] for fw in self.fw_array]
 	merged_dict['workspaces'] = [workspace.name for workspace in self.workspaces]
 	merged_dict['rois'] = self.roi_dict 
 	for merged_roi in self.merged_rois: 
 	   merged_dict['rois']['{}{}'.format('id_',merged_roi.rois[0].id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
-        sio.savemat(fw_array[0][0][:-3] + '_merged.mat',{'merged_dict':merged_dict})             
+        sio.savemat(self.fw_array[0][0][:-3] + '_merged.mat',{'merged_dict':merged_dict})             
 
     def create_SFTP(self):
         hostname = '128.200.21.98' # glass.bio.uci.edu
