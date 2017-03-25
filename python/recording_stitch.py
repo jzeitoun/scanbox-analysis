@@ -18,11 +18,22 @@ class stitched_data(object):
 	self.path = os.getcwd()
         self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in fw_array]
         self.workspaces = [workspace for data,fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
-        self.rois = [workspace.rois for data, fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
+        #self.rois = [workspace.rois for data, fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
+        self.rois = self.find_matched_rois() 
         self.merged_rois = [TrialMergedROIView(roi.id,*self.workspaces) for roi in self.rois[0]] 
         self.refresh_all()
 	self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
 	#self.sftp = self.create_SFTP()
+    
+    def find_matched_rois(self):
+        rois = [workspace.rois for data, fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]    
+        id_sets = [[roi.id for roi in roi_list] for roi_list in rois]
+        list_lengths = [len(s) for s in id_sets]
+        shortest_idx = list_lengths.index(min(list_lengths))
+        shortest_set = id_sets.pop(shortest_idx)
+        matched_ids = set(shortest_set).intersection(*id_sets)
+        matched_rois = [[roi for roi in roi_list if roi.id in matched_ids] for roi_list in rois]
+        return matched_rois
 
     def refresh_all(self):
         for merged_roi in self.merged_rois:
@@ -33,7 +44,7 @@ class stitched_data(object):
         for k in sorted_orientation_traces.keys():
             sorted_orientation_traces[k] = [dict(dtorientationsmean.attributes.items()[i] for i in [8,17]) for roi in merged_roi.rois for dtorientationsmean in roi.dtorientationsmeans if roi.workspace.name == k]
 	return sorted_orientation_traces
-	
+    	
     def export_mat(self):
         merged_dict = {}
 	merged_dict['filenames'] = [fw[0][:-3] for fw in fw_array]
