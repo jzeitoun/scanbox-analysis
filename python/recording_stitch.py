@@ -14,7 +14,7 @@ class stitched_data(object):
     Argument should be list of tuples with the filename first and the workspace name second.
     Example: stitched_dataset = stitched_data([('Day1_000_000','Workspace_1'),('Day1_000_001',Workspace_1')])
     '''
-    def __init__(self,self.fw_array):
+    def __init__(self,fw_array):
         self.self.fw_array = self.fw_array
 	self.path = os.getcwd()
         self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in self.self.fw_array]
