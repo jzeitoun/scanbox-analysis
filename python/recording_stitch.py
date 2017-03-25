@@ -19,13 +19,13 @@ class stitched_data(object):
         self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in fw_array]
         self.workspaces = [workspace for data,fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
         #self.rois = [workspace.rois for data, fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
-        self.rois = self.find_matched_rois() 
+        self.rois = self.find_matched_rois(fw_array) 
         self.merged_rois = [TrialMergedROIView(roi.id,*self.workspaces) for roi in self.rois[0]] 
         self.refresh_all()
 	self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
 	#self.sftp = self.create_SFTP()
     
-    def find_matched_rois(self):
+    def find_matched_rois(self,fw_array):
         rois = [workspace.rois for data, fw in zip(self.io, fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]    
         id_sets = [[roi.id for roi in roi_list] for roi_list in rois]
         list_lengths = [len(s) for s in id_sets]
