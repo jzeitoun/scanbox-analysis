@@ -17,9 +17,9 @@ class stitched_data(object):
     def __init__(self,fw_array):
         self.fw_array = fw_array
 	self.path = os.getcwd()
-        self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in self.self.fw_array]
+        self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in self.fw_array]
         self.workspaces = [workspace for data,fw in zip(self.io, self.fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
-        self.rois = self.find_matched_rois(self.fw_array) 
+        self.rois = self.find_matched_rois() 
         self.merged_rois = [TrialMergedROIView(roi.id,*self.workspaces) for roi in self.rois[0]] 
         self.refresh_all()
 	self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
