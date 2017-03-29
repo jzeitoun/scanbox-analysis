@@ -35,9 +35,14 @@ if __name__ == '__main__':
     if info['scanmode'] == 0:
         info['sz'][1] = info['sz'][1]-100
 	template = template[:,100:]
+ 
+    ds_template = cv2.pyrDown(template)   
 
-    ds_template = cv2.pyrDown(template)
-   
+    # set max displacement to 190 if magnification is 8x
+    if info['magnification'] == 8:
+        w_val = 190
+    else:
+        w_val = 15
 
     print 'Allocating space for aligned data...'
     output_data = np.memmap('Moco_Aligned_' + filename + '.sbx', dtype='uint16', shape=(info['length'], info['sz'][0], info['sz'][1]), mode = 'w+')
@@ -48,8 +53,9 @@ if __name__ == '__main__':
 
     q = Queue()
     
+    print 'Max displacement:',w_val
     print 'Creating processes...'
-    processes = [Process(target=align_purepy, args=(filename,indices,template,ds_template, info['length'], info['sz'][0], mapped_width, info['sz'][1], transform_file, q, info['scanmode'])) for indices in core_assignments]
+    processes = [Process(target=align_purepy, args=(filename,indices,template,ds_template, info['length'], info['sz'][0], mapped_width, info['sz'][1], transform_file, q, info['scanmode'], w_val)) for indices in core_assignments]
     
     start = time.time()
 
