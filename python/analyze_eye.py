@@ -11,10 +11,10 @@ def analyze_eye(filename,write=0):
     # restricts pupil search to +/- this value from the center
     if 'eye2' in filename:
         bounding_region = 100
-        thresh_val = 52 
+        thresh_val = 75 
     else:
         bounding_region = 80
-        thresh_val = 44
+        thresh_val = 44 
     r_effective = 1.25 # radius of pupil to center of eyeball
     pixels_per_mm = 100.0
     print 'Using threshold value of: ', thresh_val
@@ -120,17 +120,14 @@ def analyze_eye(filename,write=0):
                 # store pupil centroid
                 centroid_trace[i] = raw_pupil_centroid - center
                 centroid_trace[i,1] = -centroid_trace[i,1]
-                rgb_eye_data[i] = rgb_eye_frame
             # if no contour found, fill with last value 
             else:
                 centroid_trace[i] = centroid_trace[i-1] 
-                rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
-                rgb_eye_data[i] = rgb_eye_frame
         angular_rotation = np.zeros(centroid_trace.shape) 
         angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) # Eh in radians
         angular_rotation[:,1] = np.arcsin((centroid_trace[:,1]/pixels_per_mm)/r_effective) # Ev in radians
         angular_rotation = np.rad2deg(angular_rotation) # (Eh,Ev) into degrees
 
         np.save(filename + '_pupil_area',area_trace)
-        #np.save(filename + '_raw_xy_position',centroid_trace) # don't need to save this, saving angular velocity instead
+        np.save(filename + '_raw_xy_position',centroid_trace) # don't need to save this, saving angular velocity instead
         np.save(filename + '_angular_rotation',angular_rotation)
