@@ -76,6 +76,7 @@ def analyze_eye(filename,write=0):
                 # draw eye centroid
                 #cv2.rectangle(rgb_eye_frame,(centroid[0] - 2, centroid[1] - 2), (centroid[0] + 2, centroid[1] + 2), (0, 128, 255), -1)            
                 rgb_eye_data[i] = rgb_eye_frame
+                
             # if no contour found, fill with last value 
             else:
                 centroid_trace[i] = centroid_trace[i-1] 
@@ -129,5 +130,5 @@ def analyze_eye(filename,write=0):
         angular_rotation = np.rad2deg(angular_rotation) # (Eh,Ev) into degrees
 
         np.save(filename + '_pupil_area',area_trace)
-        np.save(filename + '_raw_xy_position',centroid_trace) # don't need to save this, saving angular velocity instead
+        #np.save(filename + '_raw_xy_position',centroid_trace) # don't need to save this, saving angular velocity instead
         np.save(filename + '_angular_rotation',angular_rotation)
