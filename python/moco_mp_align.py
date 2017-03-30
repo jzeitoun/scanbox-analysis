@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     # set max displacement to 190 if magnification is 8x
     if info['magnification'] == 8:
-        w_val = 100
+        w_val = 150
     else:
         w_val = 15
 
