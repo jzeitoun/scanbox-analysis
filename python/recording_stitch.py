@@ -55,7 +55,7 @@ class stitched_data(object):
         if filename == None:
             fname = self.fw_array[0][0][:-3] + '_merged.mat'
         else:
-            fname = filename
+            fname = filename + '.mat'
         sio.savemat(fname,{'merged_dict':merged_dict})             
 
     def create_SFTP(self):
