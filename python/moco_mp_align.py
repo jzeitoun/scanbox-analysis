@@ -39,7 +39,7 @@ if __name__ == '__main__':
     ds_template = cv2.pyrDown(template)   
 
     # set max displacement to 190 if magnification is 8x
-    if info['magnification'] == 8:
+    if 'magnification' in info and info['magnification'] == 8:
         w_val = 150
     else:
         w_val = 15
