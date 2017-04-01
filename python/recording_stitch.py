@@ -20,19 +20,23 @@ class stitched_data(object):
         self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in self.fw_array]
         self.workspaces = [workspace for data,fw in zip(self.io, self.fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
         self.rois = self.find_matched_rois() 
-        self.merged_rois = [TrialMergedROIView(roi.id,*self.workspaces) for roi in self.rois[0]] 
+        #self.merged_rois = [TrialMergedROIView(roi.id,*self.workspaces) for roi in self.rois[0]] 
+        self.merged_rois = [TrialMergedROIView(roi.params.cell_id,*self.workspaces) for roi in self.rois[0]] 
         self.refresh_all()
-	self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
+	#self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
+        self.roi_dict = {'{}'.format(merged_roi.rois[0].workspace_id):merged_roi.serialize() for merged_roi in self.merged_rois}
 	#self.sftp = self.create_SFTP()
     
     def find_matched_rois(self):
         rois = [workspace.rois for data, fw in zip(self.io, self.fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]    
-        id_sets = [[roi.id for roi in roi_list] for roi_list in rois]
+        #id_sets = [[roi.id for roi in roi_list] for roi_list in rois]
+        id_sets = [[roi.params.cell_id for roi in roi_list] for roi_list in rois]
         list_lengths = [len(s) for s in id_sets]
         shortest_idx = list_lengths.index(min(list_lengths))
         shortest_set = id_sets.pop(shortest_idx)
         matched_ids = set(shortest_set).intersection(*id_sets)
-        matched_rois = [[roi for roi in roi_list if roi.id in matched_ids] for roi_list in rois]
+        #matched_rois = [[roi for roi in roi_list if roi.id in matched_ids] for roi_list in rois]
+        matched_rois = [[roi for roi in roi_list if roi.params.cell_id in matched_ids] for roi_list in rois]
         return matched_rois
 
     def refresh_all(self):
