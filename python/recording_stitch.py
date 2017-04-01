@@ -24,7 +24,7 @@ class stitched_data(object):
         self.merged_rois = [TrialMergedROIView(roi.params.cell_id,*self.workspaces) for roi in self.rois[0]] 
         self.refresh_all()
 	#self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
-        self.roi_dict = {'{}'.format(merged_roi.rois[0].workspace_id):merged_roi.serialize() for merged_roi in self.merged_rois}
+        self.roi_dict = {'{}'.format(merged_roi.rois[0].params.cell_id):merged_roi.serialize() for merged_roi in self.merged_rois}
 	#self.sftp = self.create_SFTP()
     
     def find_matched_rois(self):
@@ -55,7 +55,8 @@ class stitched_data(object):
 	merged_dict['workspaces'] = [workspace.name for workspace in self.workspaces]
 	merged_dict['rois'] = self.roi_dict 
 	for merged_roi in self.merged_rois: 
-	   merged_dict['rois']['{}{}'.format('id_',merged_roi.rois[0].id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
+	   #merged_dict['rois']['{}{}'.format('id_',merged_roi.rois[0].id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
+            merged_dict['rois']['{}'.format(merged_roi.rois[0].params.cell_id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
         if filename == None:
             fname = self.fw_array[0][0][:-3] + '_merged.mat'
         else:
