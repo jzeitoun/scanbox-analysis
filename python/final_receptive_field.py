@@ -85,13 +85,13 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
             m['mean_trace'] = np.mean([np.stack(w['on_df/f'],axis=0) for w in white_traces if w['linear_position'] == m['linear_position']],axis=0)
         for m in black_mean_traces:
             m['mean_trace'] = np.mean([np.stack(w['on_df/f'],axis=0) for w in black_traces if w['linear_position'] == m['linear_position']],axis=0)
-        
+       
         ''' MEAN PIXEL CALCULATION'''
         # calculate pixel maps from mean traces
         white_pixel_map = np.array([np.max(k['mean_trace'][:trailing_frames/2]) for k in white_mean_traces]).reshape([sq_size,sq_size])
         black_pixel_map = np.array([np.max(k['mean_trace'][:trailing_frames/2]) for k in black_mean_traces]).reshape([sq_size,sq_size])
         
-        np.save(dir_path + roi.params.cell_id + '_analysis',{'framerate':framerate,
+        np.save(os.path.join(dir_path,roi.params.cell_id + '_analysis'),{'framerate':framerate,
                                    'sq_size':sq_size,
                                    'white_traces':white_traces,
                                    'black_traces':black_traces,
