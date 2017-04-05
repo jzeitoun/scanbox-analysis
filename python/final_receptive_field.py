@@ -19,7 +19,7 @@ def get_receptive_field(io_file,_workspace,plot=0,framerate=15.35,baseline_selec
     os.mkdir(io_file + '-analysis')
     dir_path = os.path.abspath(io_file + '-analysis')
     path = os.getcwd()                                                     
-    io = [ScanboxIO(os.path.join(io_file + '.io')) for fw in self.fw_array]
+    io = ScanboxIO(os.path.join(io_file + '.io'))
     workspace = [w for w in io.condition.workspaces if w.name == _workspace][0]
     rois = [roi for roi in workspace.rois]
     trailing_frames = np.int64(trailing_seconds * framerate)
