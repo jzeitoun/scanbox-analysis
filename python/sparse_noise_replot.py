@@ -1,7 +1,9 @@
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib import gridspec
 
-def replot(ROI):
-    data = np.load(ROI + '_analysis.npy').tolist()
+def replot(cell_id):
+    data = np.load(cell_id + '_analysis.npy').tolist()
     sq_size = data['sq_size']
     
     # calculate y limits
@@ -14,7 +16,7 @@ def replot(ROI):
     colorscale_min = 0
     
     # set up figure
-    fig = figure(ROI)
+    fig = plt.figure(cell_id)
     gs0 = gridspec.GridSpec(2, 2) 
     gs00 = gridspec.GridSpecFromSubplotSpec(sq_size, sq_size, subplot_spec=gs0[0])
     gs01 = gridspec.GridSpecFromSubplotSpec(sq_size, sq_size, subplot_spec=gs0[1])
@@ -67,6 +69,6 @@ def replot(ROI):
 
 def export_svg(fig_num=0):
     if fig_num:
-        fig = figure(fig_num)
+        fig = plt.figure(fig_num)
     ROI = str(plt.get_figlabels()[0])
-    savefig(ROI + '_figure.svg',dpi=300)
+    plt.savefig(ROI + '_figure.svg',dpi=300)
