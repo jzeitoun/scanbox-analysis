@@ -27,7 +27,7 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
 
     for roi in rois:
         dtoverallmeans = roi.dtoverallmean.value
-        conditions = [[dict(t.attributes)] for t in io.condition.trials]
+        conditions = [dict(t.attributes) for t in io.condition.trials]
         for c in conditions:
             c.update(io.condition.trial_list[c['sequence']])
         sq_size = max([c['y'] for c in conditions]) + 1
