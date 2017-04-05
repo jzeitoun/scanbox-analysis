@@ -10,10 +10,7 @@ def sub2ind(array_shape, rows, cols):
     '''Converts xy coordinates to linear'''
     return (rows*array_shape[1]) + cols + 1
   
-#def get_receptive_field(ROI,_conditions,plot=0,framerate=15.35,baseline_select=7,trailing_seconds=2):
 def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2):
-    #conditions = np.load(_conditions).tolist()
-    #dtoverallmeans = np.load('ROI_' + ROI)
     if '.io' in io_file:
         io_file = io_file[:-3]
     os.mkdir(io_file + '-analysis')

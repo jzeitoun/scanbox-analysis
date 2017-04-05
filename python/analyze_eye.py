@@ -129,6 +129,8 @@ def analyze_eye(filename,write=0):
         angular_rotation[:,1] = np.arcsin((centroid_trace[:,1]/pixels_per_mm)/r_effective) # Ev in radians
         angular_rotation = np.rad2deg(angular_rotation) # (Eh,Ev) into degrees
 
-        np.save(filename + '_pupil_area',area_trace)
+        return area_trace,angular_rotation
+        #np.save(filename + '_pupil_area',area_trace)
         #np.save(filename + '_raw_xy_position',centroid_trace) # don't need to save this, saving angular velocity instead
-        np.save(filename + '_angular_rotation',angular_rotation)
+        #np.save(filename + '_angular_rotation',angular_rotation)
+
