@@ -10,6 +10,8 @@ data = num2cell(zeros(num_sfreqs,18));
 data(:,:) = {''};
 
 % Assign values to data array
+data(1,1) = {merged_roi.dtanovaalls{1, 1}.attributes.value.f};
+data(1,2) = {merged_roi.dtanovaalls{1, 1}.attributes.value.p};
 data(1,3) = {merged_roi.dtsfreqfits{1, 1}.attributes.value.rc33(1)};
 data(1,4) = {merged_roi.dtsfreqfits{1, 1}.attributes.value.rc33(2)};
 data(1,5) = {merged_roi.dtsfreqfits{1, 1}.attributes.value.peak};

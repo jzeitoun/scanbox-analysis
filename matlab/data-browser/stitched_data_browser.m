@@ -22,7 +22,7 @@ function varargout = stitched_data_browser(varargin)
 
 % Edit the above text to modify the response to help stitched_data_browser
 
-% Last Modified by GUIDE v2.5 18-Mar-2017 18:06:00
+% Last Modified by GUIDE v2.5 06-Apr-2017 16:16:00
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;

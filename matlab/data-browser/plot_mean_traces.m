@@ -43,8 +43,10 @@ for i = 1:num_sfreqs
     ylabel(string(merged_roi.dtorientationsmeans{1, i}.attributes.trial_sf), 'FontSize', 15, 'Color', 'w');
     set(subplot(num_sfreqs,1,i),'Color',[0.4 0.4 0.4])
     plot(mean_x,mean_y,'r','LineWidth',2);
-    xticks(x_axis);
-    xticklabels(xlabels);
+    %xticks(x_axis);
+    %xticklabels(xlabels);
+    set(gca, 'xtick', x_axis);
+    set(gca, 'xticklabel', xlabels);
     ax.XColor = 'w';
     ax.YColor = 'w';
     set(gca, 'Ticklength', [0 0]);
