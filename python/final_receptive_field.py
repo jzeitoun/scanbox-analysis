@@ -95,11 +95,11 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
         black_pixel_map = np.array([np.sum(k['mean_trace'][:trailing_frames/2]) for k in black_mean_traces]).reshape([sq_size,sq_size])
 
         # calculate z-score map
-        white_k_score_map = (white_pixel_map - np.mean(white_pixel_map)) / np.std(white_pixel_map)
-        black_k_score_map = (black_pixel_map - np.mean(black_pixel_map)) / np.std(black_pixel_map)
+        white_z_score_map = (white_pixel_map - np.mean(white_pixel_map)) / np.std(white_pixel_map)
+        black_z_score_map = (black_pixel_map - np.mean(black_pixel_map)) / np.std(black_pixel_map)
 
-        filtered_white_k_score_map = gaussian_filter(white_k_score_map,sigma=1)
-        filtered_black_k_score_map = gaussian_filter(black_k_score_map,sigma=1)
+        filtered_white_z_score_map = gaussian_filter(white_z_score_map,sigma=1)
+        filtered_black_z_score_map = gaussian_filter(black_z_score_map,sigma=1)
         
         # need to upscale by factor of 10 using cubic interpolation
 
@@ -111,8 +111,8 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
                                    'black_pixel_map':black_pixel_map,
                                    'white_mean_traces':white_mean_traces,
                                    'black_mean_traces':black_mean_traces,
-                                   'filtered_white_k_score_map':filtered_white_k_score_map,
-                                   'filtered_black_k_score_map':filtered_black_k_score_map})
+                                   'filtered_white_z_score_map':filtered_white_z_score_map,
+                                   'filtered_black_z_score_map':filtered_black_z_score_map})
 
     #if plot:
     #    # calculate y limits
