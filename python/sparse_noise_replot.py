@@ -11,9 +11,9 @@ def replot(cell_id):
     y_min = np.min([min(np.concatenate([w['on_df/f'] for w in data['white_traces']])),min(np.concatenate([b['on_df/f'] for b in data['black_traces']]))])
            
     # calculate color scalebar
-    colorscale_max = np.max([max(np.concatenate([w['mean_trace'] for w in data['white_mean_traces']])),max(np.concatenate([b['mean_trace'] for b in data['black_mean_traces']]))])
+    #colorscale_max = np.max([max(np.concatenate([w['mean_trace'] for w in data['white_mean_traces']])),max(np.concatenate([b['mean_trace'] for b in data['black_mean_traces']]))])
     #colorscale_min = np.min([min(np.concatenate([w['mean_trace'] for w in data['white_mean_traces']])),min(np.concatenate([b['mean_trace'] for b in data['black_mean_traces']]))])
-    colorscale_min = 0
+    #colorscale_min = 0
     
     # set up figure
     fig = plt.figure(cell_id)
@@ -55,15 +55,19 @@ def replot(cell_id):
     # display on and off pixel maps
     #plt.figure('\'White\' Response Pixel Map')
     plt.subplot(gs01[:,:]) 
-    plt.imshow(data['white_pixel_map'],interpolation='none',cmap='Reds')
-    plt.title('White Response Pixel Map')
-    plt.clim(colorscale_min,colorscale_max)
+    #plt.imshow(data['white_pixel_map'],interpolation='none',cmap='Reds')
+    plt.imshow(data['filtered_white_z_score_map'],interpolation='none',cmap='Reds')
+    #plt.title('White Response Pixel Map')
+    plt.title('White Z-Score Pixel Map')
+    #plt.clim(colorscale_min,colorscale_max) # uncomment to select colorscale limits
     plt.colorbar()
     #plt.figure('\'Black\' Response Pixel Map')
     plt.subplot(gs03[:,:]) 
-    plt.imshow(data['black_pixel_map'],interpolation='none',cmap='Blues')
-    plt.title('Black Response Pixel Map')
-    plt.clim(colorscale_min,colorscale_max)
+    #plt.imshow(data['black_pixel_map'],interpolation='none',cmap='Blues')
+    plt.imshow(data['filtered_black_z_score_map'],interpolation='none',cmap='Blues')
+    #plt.title('Black Response Pixel Map')
+    plt.title('Black Z-Score Pixel Map')
+    #plt.clim(colorscale_min,colorscale_max) # uncomment to select colorscale limits
     plt.colorbar()
     gs0.tight_layout(fig,pad=0.5)
 
