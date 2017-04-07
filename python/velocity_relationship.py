@@ -48,4 +48,12 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
                     ) for on in on_idx
                 ]
         # create dataframe from sorted_mean_velocities
+        sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','velocity'])
+        
+        # generate eye data
+        #area_1, angular_rotation_1 = 
+        
+        # merge data into one dataset
+        dataset = pd.merge(dataset,sv_dataset,on='on_frame')
 
+        return dataset
