@@ -61,4 +61,4 @@ def find_relationship(io_file,_workspace,smoothwalk_file):#,eye1_data,eye2_data)
         dataset = pd.merge(dataset,sv_dataset,on='on_frame')
         
         # pickle data
-        dataset.to_pickle(os.path.join(dir_path,roi.id + '_analysis.pickle'))
+        dataset.to_pickle(os.path.join(dir_path,str(roi.id) + '_analysis.pickle'))
