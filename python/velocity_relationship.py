@@ -54,10 +54,14 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
     area_2, angular_rotation_2 = analyze_eye(eye2_data)
 
     # take derivative of angular rotations
-    angular_rotation_1[:,0] = np.diff(angular_rotation_1[:,0])
-    angular_rotation_1[:,1] = np.diff(angular_rotation_1[:,1])
-    angular_rotation_2[:,0] = np.diff(angular_rotation_2[:,0])
-    angular_rotation_2[:,1] = np.diff(angular_rotation_2[:,1])
+    angular_rotation_1[1:,0] = np.diff(angular_rotation_1[:,0])
+    angular_rotation_1[0,0] = np.nan
+    angular_rotation_1[1:,1] = np.diff(angular_rotation_1[:,1])
+    angular_rotation_1[0,1] = np.nan
+    angular_rotation_2[1:,0] = np.diff(angular_rotation_2[:,0])
+    angular_rotation_2[0,0] = np.nan
+    angular_rotation_2[1:,1] = np.diff(angular_rotation_2[:,1])
+    angular_rotation_2[0,1] = np.nan
 
     # extract mean eye metrics for all on_frames
     sorted_mean_eye_data = [
