@@ -1,5 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
+import os
 
 from readSmoothWalkVelocity import findSmoothVelocity
 from analyze_eye import analyze_eye
