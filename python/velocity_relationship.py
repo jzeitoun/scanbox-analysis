@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import os
 
+from pacu.core.io.scanbox.impl2 import ScanboxIO
+
 from readSmoothWalkVelocity import findSmoothVelocity
 from analyze_eye import analyze_eye
 
