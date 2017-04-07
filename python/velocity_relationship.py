@@ -8,7 +8,7 @@ from pacu.core.io.scanbox.impl2 import ScanboxIO
 from readSmoothWalkVelocity import findSmoothVelocity
 from analyze_eye import analyze_eye
 
-def find_relationship(io_file,_workspace,smoothwalk_file):#,eye1_data,eye2_data):
+def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
     if '.io' in io_file:                                                       
         io_file = io_file[:-3]                                                 
     os.mkdir(io_file + '-analysis')                                            
@@ -36,7 +36,7 @@ def find_relationship(io_file,_workspace,smoothwalk_file):#,eye1_data,eye2_data)
     # adjust to zero-indexing
     smooth_data['Count'] = np.int64(smooth_data['Count'])-1
 
-    # set velocity values to positive
+    # ensure velocity values are positive
     smooth_data['Velocity'] = np.abs(smooth_data['Velocity'])
 
     # extract mean of velocity for on_frames
@@ -50,7 +50,29 @@ def find_relationship(io_file,_workspace,smoothwalk_file):#,eye1_data,eye2_data)
     sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','velocity'])
     
     # generate eye data
-    #area_1, angular_rotation_1 = 
+    area_1, angular_rotation_1 = analyze_eye(eye1_data)
+    area_2, angular_rotation_2 = analyze_eye(eye2_data)
+
+    # take derivative of angular rotations
+    angular_rotation_1[:,0] = np.diff(angular_rotation_1[:,0])
+    angular_rotation_1[:,1] = np.diff(angular_rotation_1[:,1])
+    angular_rotation_2[:,0] = np.diff(angular_rotation_2[:,0])
+    angular_rotation_2[:,1] = np.diff(angular_rotation_2[:,1])
+
+    # extract mean eye metrics for all on_frames
+    sorted_mean_eye_data = [
+            (on[0],
+                np.mean(area_1[on[0]:on[1]]),
+                np.mean(area_2[on[0]:on[1]]),
+                np.mean(angular_rotation_1[on[0]:on[1],0]),
+                np.mean(angular_rotation_1[on[0]:on[1],1]),
+                np.mean(angular_rotation_2[on[0]:on[1],0]),
+                np.mean(angular_rotation_2[on[0]:on[1],1])
+                ) for on in on_idx
+            ]
+
+    # create dataframe from sorted_
+    eye_dataset = pd.DataFrame(sorted_mean_eye_data,columns=['on_frame','eye_1_pupil_area','eye_2_pupil_area','eye_1_hav','eye_1_vav','eye_2_hav','eye_2_vav'])
 
     for roi in rois:
         # creates tuples of on_frame and r-value 
@@ -60,11 +82,13 @@ def find_relationship(io_file,_workspace,smoothwalk_file):#,eye1_data,eye2_data)
                     )
                 for trial in roi.dttrialdff0s
                 ]
+
         # create dataframe from r-values
         dataset = pd.DataFrame(r_value,columns=['on_frame','r-value'])
 
         # merge data into one dataset
         dataset = pd.merge(dataset,sv_dataset,on='on_frame')
-        
+        dataset = pd.merge(dataset,eye_dataset,on='on_frame')
+
         # pickle data
         dataset.to_pickle(os.path.join(dir_path,str(roi.params.cell_id) + '_analysis.pickle'))
