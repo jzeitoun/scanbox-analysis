@@ -32,14 +32,20 @@ def find_relationship(io_file,_workspace,smoothwalk_file):#,eye1_data,eye2_data)
 
     # generate velocity data
     smooth_data = findSmoothVelocity(smoothwalk_file)
+
     # adjust to zero-indexing
     smooth_data['Count'] = np.int64(smooth_data['Count'])-1
+
+    # set velocity values to positive
+    smooth_data['Velocity'] = np.abs(smooth_data['Velocity'])
+
     # extract mean of velocity for on_frames
     sorted_mean_velocity = [
             (on[0],
                 np.mean(smooth_data.set_index('Count').loc[on[0]:on[1]-1]['Velocity'].as_matrix())
                 ) for on in on_idx
             ]
+
     # create dataframe from sorted_mean_velocities
     sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','velocity'])
     
