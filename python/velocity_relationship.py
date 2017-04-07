@@ -47,7 +47,7 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
             ]
 
     # create dataframe from sorted_mean_velocities
-    sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','velocity'])
+    sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','Velocity'])
     
     # generate eye data
     area_1, angular_rotation_1 = analyze_eye(eye1_data)
@@ -76,7 +76,15 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
             ]
 
     # create dataframe from sorted_
-    eye_dataset = pd.DataFrame(sorted_mean_eye_data,columns=['on_frame','eye_1_pupil_area','eye_2_pupil_area','eye_1_hav','eye_1_vav','eye_2_hav','eye_2_vav'])
+    eye_dataset = pd.DataFrame(sorted_mean_eye_data,columns=[
+        'on_frame',
+        'Eye 1 Pupil Area',
+        'Eye 2 Pupil Area',
+        'Eye 1 Horizontal AV',
+        'Eye 1 Vertical AV',
+        'Eye 2 Horizontal AV',
+        'Eye 2 Vertical AV'
+        ])
 
     for roi in rois:
         # creates tuples of on_frame and r-value 
