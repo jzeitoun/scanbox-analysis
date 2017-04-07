@@ -57,15 +57,27 @@ handles.output = hObject;
 % Set GUI window name
 set(handles.figure1,'Name','Stitched Data Browser');
 
+% Make GUI scalable
+set(hObject,'Resize','on');
+
 % Get merged roi data
 handles.fname = varargin{1};
 load(handles.fname);
 handles.merged_rois = merged_dict.rois;
 
 % Update pop-up menu with ROI options
-roi_selection = sort(fieldnames(handles.merged_rois));
+cell_ids = fieldnames(handles.merged_rois);
+for n = 1:size(cell_ids,1)
+    id = cell_ids{n};
+    cell_ids{n} = str2num(id(9:end));
+end
+sorted_ids = sort(cell2mat(cell_ids));
+roi_selection = num2cell(sorted_ids);
+for k = 1:size(roi_selection,1)
+    roi_selection{k} = num2str(roi_selection{k});
+end
 set(handles.roi_popup,'String',roi_selection);
-default_roi = roi_selection{1};
+default_roi = ['cell_id_' roi_selection{1}];
 
 % Plot first ROI
 plot_mean_traces(handles.merged_rois.(default_roi),handles.avgtrace_panel);
@@ -97,7 +109,7 @@ function roi_popup_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 contents = cellstr(get(hObject,'String'));
-selected_roi = contents{get(hObject,'Value')};
+selected_roi = ['cell_id_' contents{get(hObject,'Value')}];
 plot_mean_traces(handles.merged_rois.(selected_roi),handles.avgtrace_panel);
 plot_t_curve(handles.merged_rois.(selected_roi),handles.t_curve_axes);
 plot_stats(handles.merged_rois.(selected_roi),handles.uitable);
