@@ -5,9 +5,10 @@ from sbxread import *
 
 def make_montage_2chan(fname):
     
-    info = sbxread(fname,0,1)
+    info = sbxread(fname)
     
-    data = np.memmap(fname + '.sbx', dtype='uint16')
+    data = sbxmap(fname)
+    #np.memmap(fname + '.sbx', dtype='uint16')
     green_data = data[::2].reshape([info['length'],info['sz'][0],info['sz'][1]])
     red_data = data[1::2].reshape([info['length'],info['sz'][0],info['sz'][1]])
     
