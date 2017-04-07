@@ -30,6 +30,22 @@ def find_relationship(io_file,_workspace,smoothwalk_file):#,eye1_data,eye2_data)
     on_idx = zip(on_frames,on_frames+number_frames+1)                                       
     #off_idx = zip(off_frames,np.append(on_frames[1:],on_frames[-1] + min(np.diff(on_frames))))
 
+    # generate velocity data
+    smooth_data = findSmoothVelocity(smoothwalk_file)
+    # adjust to zero-indexing
+    smooth_data['Count'] = np.int64(smooth_data['Count'])-1
+    # extract mean of velocity for on_frames
+    sorted_mean_velocity = [
+            (on[0],
+                np.mean(smooth_data.set_index('Count').loc[on[0]:on[1]-1]['Velocity'].as_matrix())
+                ) for on in on_idx
+            ]
+    # create dataframe from sorted_mean_velocities
+    sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','velocity'])
+    
+    # generate eye data
+    #area_1, angular_rotation_1 = 
+
     for roi in rois:
         # creates tuples of on_frame and r-value 
         r_value = [
@@ -40,23 +56,7 @@ def find_relationship(io_file,_workspace,smoothwalk_file):#,eye1_data,eye2_data)
                 ]
         # create dataframe from r-values
         dataset = pd.DataFrame(r_value,columns=['on_frame','r-value'])
-        
-        # generate velocity data
-        smooth_data = findSmoothVelocity(smoothwalk_file)
-        # adjust to zero-indexing
-        smooth_data['Count'] = np.int64(smooth_data['Count'])-1
-        # extract mean of velocity for on_frames
-        sorted_mean_velocity = [
-                (on[0],
-                    np.mean(smooth_data.set_index('Count').loc[on[0]:on[1]-1]['Velocity'].as_matrix())
-                    ) for on in on_idx
-                ]
-        # create dataframe from sorted_mean_velocities
-        sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','velocity'])
-        
-        # generate eye data
-        #area_1, angular_rotation_1 = 
-        
+
         # merge data into one dataset
         dataset = pd.merge(dataset,sv_dataset,on='on_frame')
         
