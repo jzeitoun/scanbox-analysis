@@ -11,17 +11,20 @@ def replot(cell_id):
     y_min = np.min([min(np.concatenate([w['on_df/f'] for w in data['white_traces']])),min(np.concatenate([b['on_df/f'] for b in data['black_traces']]))])
            
     # calculate color scalebar
-    #colorscale_max = np.max([max(np.concatenate([w['mean_trace'] for w in data['white_mean_traces']])),max(np.concatenate([b['mean_trace'] for b in data['black_mean_traces']]))])
+    colorscale_max = np.max([max(np.concatenate([w['mean_trace'] for w in data['white_mean_traces']])),max(np.concatenate([b['mean_trace'] for b in data['black_mean_traces']]))])
     #colorscale_min = np.min([min(np.concatenate([w['mean_trace'] for w in data['white_mean_traces']])),min(np.concatenate([b['mean_trace'] for b in data['black_mean_traces']]))])
-    #colorscale_min = 0
+    colorscale_min = 0
     
     # set up figure
     fig = plt.figure(cell_id)
-    gs0 = gridspec.GridSpec(2, 2) 
+    #gs0 = gridspec.GridSpec(2, 2) 
+    gs0 = gridspec.GridSpec(2, 3) 
     gs00 = gridspec.GridSpecFromSubplotSpec(sq_size, sq_size, subplot_spec=gs0[0])
     gs01 = gridspec.GridSpecFromSubplotSpec(sq_size, sq_size, subplot_spec=gs0[1])
     gs02 = gridspec.GridSpecFromSubplotSpec(sq_size, sq_size, subplot_spec=gs0[2])
     gs03 = gridspec.GridSpecFromSubplotSpec(sq_size, sq_size, subplot_spec=gs0[3])
+    gs04 = gridspec.GridSpecFromSubplotSpec(sq_size, sq_size, subplot_spec=gs0[4])
+    gs05 = gridspec.GridSpecFromSubplotSpec(sq_size, sq_size, subplot_spec=gs0[5])
         
     ''' PLOT ON & OFF RESPONSES '''
     # plot on traces
@@ -41,7 +44,8 @@ def replot(cell_id):
     # plot off traces
     #plt.figure('\'Black\' Response Traces')
     for b in data['black_traces']:
-        plt.subplot(gs02[b['linear_position']-1])
+        #plt.subplot(gs02[b['linear_position']-1])
+        plt.subplot(gs03[b['linear_position']-1])
         plt.ylim(y_min,y_max)
         plt.xticks([])
         plt.yticks([])
@@ -49,23 +53,26 @@ def replot(cell_id):
         
     # plot mean off traces
     for m in data['black_mean_traces']:
-        plt.subplot(gs02[m['linear_position']-1])
+        #plt.subplot(gs02[m['linear_position']-1])
+        plt.subplot(gs03[m['linear_position']-1])
         plt.plot(m['mean_trace'],linewidth=.5,c='blue') 
     
     # display on and off pixel maps
     #plt.figure('\'White\' Response Pixel Map')
     plt.subplot(gs01[:,:]) 
-    #plt.imshow(data['white_pixel_map'],interpolation='none',cmap='Reds')
+    plt.imshow(data['white_pixel_map'],interpolation='none',cmap='Reds')
+    plt.title('White Raw Pixel Map')
+    plt.subplot(gs0s21[:,:])
     plt.imshow(data['filtered_white_z_score_map'],interpolation='none',cmap='Reds')
-    #plt.title('White Response Pixel Map')
     plt.title('White Z-Score Pixel Map')
     #plt.clim(colorscale_min,colorscale_max) # uncomment to select colorscale limits
     plt.colorbar()
     #plt.figure('\'Black\' Response Pixel Map')
-    plt.subplot(gs03[:,:]) 
-    #plt.imshow(data['black_pixel_map'],interpolation='none',cmap='Blues')
+    plt.subplot(gs04[:,:]) 
+    plt.imshow(data['black_pixel_map'],interpolation='none',cmap='Blues')
+    plt.title('Black Raw Pixel Map')
+    plt.subplot(gs05[:,:]) 
     plt.imshow(data['filtered_black_z_score_map'],interpolation='none',cmap='Blues')
-    #plt.title('Black Response Pixel Map')
     plt.title('Black Z-Score Pixel Map')
     #plt.clim(colorscale_min,colorscale_max) # uncomment to select colorscale limits
     plt.colorbar()

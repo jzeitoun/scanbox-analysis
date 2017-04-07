@@ -23,6 +23,7 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
     rois = [roi for roi in workspace.rois]
     framerate = io.condition.framerate
     trailing_frames = np.int64(trailing_seconds * framerate)
+    num_on_frames = rois[0].dtorientationsmeans.first.on_frames
 
     for roi in rois:
         dtoverallmeans = roi.dtoverallmean.value
@@ -87,12 +88,12 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
        
         ''' MEAN PIXEL CALCULATION'''
         # calculate pixel maps from mean traces
-        #white_pixel_map = np.array([np.max(k['mean_trace'][:trailing_frames/2]) for k in white_mean_traces]).reshape([sq_size,sq_size])
-        #black_pixel_map = np.array([np.max(k['mean_trace'][:trailing_frames/2]) for k in black_mean_traces]).reshape([sq_size,sq_size])
+        #white_pixel_map = np.array([np.max(k['mean_trace'][:num_on_frames]) for k in white_mean_traces]).reshape([sq_size,sq_size])
+        #black_pixel_map = np.array([np.max(k['mean_trace'][:num_on_frames]) for k in black_mean_traces]).reshape([sq_size,sq_size])
 
         # uncomment to use sum instead of max
-        white_pixel_map = np.array([np.sum(k['mean_trace'][:trailing_frames/2]) for k in white_mean_traces]).reshape([sq_size,sq_size])
-        black_pixel_map = np.array([np.sum(k['mean_trace'][:trailing_frames/2]) for k in black_mean_traces]).reshape([sq_size,sq_size])
+        white_pixel_map = np.array([np.sum(k['mean_trace'][:num_on_frames]) for k in white_mean_traces]).reshape([sq_size,sq_size])
+        black_pixel_map = np.array([np.sum(k['mean_trace'][:num_on_frames]) for k in black_mean_traces]).reshape([sq_size,sq_size])
 
         # calculate z-score map
         white_z_score_map = (white_pixel_map - np.mean(white_pixel_map)) / np.std(white_pixel_map)
