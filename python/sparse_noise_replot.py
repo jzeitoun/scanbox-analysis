@@ -62,7 +62,7 @@ def replot(cell_id):
     plt.subplot(gs01[:,:]) 
     plt.imshow(data['white_pixel_map'],interpolation='none',cmap='Reds')
     plt.title('White Raw Pixel Map')
-    plt.subplot(gs0s21[:,:])
+    plt.subplot(gs02[:,:])
     plt.imshow(data['filtered_white_z_score_map'],interpolation='none',cmap='Reds')
     plt.title('White Z-Score Pixel Map')
     #plt.clim(colorscale_min,colorscale_max) # uncomment to select colorscale limits
