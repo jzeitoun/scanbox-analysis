@@ -117,3 +117,4 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
 
         # pickle data
         dataset.to_pickle(os.path.join(dir_path,str(roi.params.cell_id) + '_analysis.pickle'))
+    import ipdb; ipdb.set_trace()
