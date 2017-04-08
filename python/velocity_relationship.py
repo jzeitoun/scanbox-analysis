@@ -88,7 +88,8 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
         ])
 
     for roi in rois:
-        pref_sf = roi.dtorientationbestprefs.first.attributes['peak_sf']
+        #pref_sf = round(roi.dtsfreqfits.first.attributes['value']['peak'],2)
+        pref_sf = roi.dtorientationsbestprefs.first.attributes['peak_sf']
         pref_ori = roi.dtorientationbestprefs.first.attributes['value']
         pref_ori = orientations[np.where(np.abs(orientations-pref_ori) == np.min(np.abs(orientations-pref_ori)))]
         
