@@ -81,14 +81,13 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
         'on_frame',
         'Eye 1 Pupil Area',
         'Eye 2 Pupil Area',
-        'Eye 1 Hpref_orizontal AV',
+        'Eye 1 Horizontal AV',
         'Eye 1 Vertical AV',
-        'Eye 2 Hpref_orizontal AV',
+        'Eye 2 Horizontal AV',
         'Eye 2 Vertical AV'
         ])
 
     for roi in rois:
-        #pref_sf = round(roi.dtsfreqfits.first.attributes['value']['peak'],2)
         pref_sf = roi.dtorientationbestprefs.first.attributes['peak_sf']
         pref_ori = roi.dtorientationbestprefs.first.attributes['value']
         pref_ori = orientations[np.where(np.abs(orientations-pref_ori) == np.min(np.abs(orientations-pref_ori)))]
@@ -112,10 +111,14 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
         dataset['Pref r-value'] = dataset['r-value']
         dataset['Pref r-value'].loc[~dataset['on_frame'].isin(pref_on_frames)] = np.nan
 
+        # add column for Rmax
+        dataset['Rmax'] = np.nan
+        dataset['Rmax'][0] = roi.dtorientationsfits.first.attributes['value']['r_max']
+
         # merge data into one dataset
         dataset = pd.merge(dataset,sv_dataset,on='on_frame')
         dataset = pd.merge(dataset,eye_dataset,on='on_frame')
 
         # pickle data
         dataset.to_pickle(os.path.join(dir_path,str(roi.params.cell_id) + '_analysis.pickle'))
-    import ipdb; ipdb.set_trace()
+    #import ipdb; ipdb.set_trace()
