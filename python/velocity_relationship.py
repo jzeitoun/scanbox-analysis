@@ -19,8 +19,8 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
     conditions = [dict(t.attributes) for t in io.condition.trials]
     rois = [roi for roi in workspace.rois]
     framerate = io.condition.framerate
-    number_frames = rois[0].dtpref_orientationsmeans.first.on_frames
-    pref_orientations = np.array(io.condition.pref_orientations)
+    number_frames = rois[0].dtorientationsmeans.first.on_frames
+    pref_orientations = np.array(io.condition.orientations)
 
     on_times = np.array([d['on_time'] for d in conditions])                                
     off_times = np.array([d['off_time'] for d in conditions])                              
@@ -88,8 +88,8 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
         ])
 
     for roi in rois:
-        pref_sf = roi.dtpref_orientationsmeans.first.peak_sf
-        pref_ori = roi.dtpref_orientationsmeans.first.value
+        pref_sf = roi.dtorientationbestprefs.attributes.peak_sf
+        pref_ori = roi.dtorientationbestprefs.attributes.value
         pref_ori = orientations[np.where(np.abs(orientations-pref_ori) == np.min(np.abs(orientations-pref_ori)))]
         
         # find preferred sf/orientation trials
