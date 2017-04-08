@@ -113,7 +113,7 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
 
         # add column for Rmax
         dataset['Rmax'] = np.nan
-        peak_r_max = roi.dtorientationsfits.filter_by(trial_sf=pref_sf)
+        peak_r_max = roi.dtorientationsfits.filter_by(trial_sf=pref_sf)[0]
         dataset['Rmax'][0] = peak_r_max.attributes['value']['r_max']
 
         # merge data into one dataset
