@@ -19,7 +19,8 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
     conditions = [dict(t.attributes) for t in io.condition.trials]
     rois = [roi for roi in workspace.rois]
     framerate = io.condition.framerate
-    number_frames = rois[0].dtorientationsmeans.first.on_frames
+    number_frames = rois[0].dtpref_orientationsmeans.first.on_frames
+    pref_orientations = np.array(io.condition.pref_orientations)
 
     on_times = np.array([d['on_time'] for d in conditions])                                
     off_times = np.array([d['off_time'] for d in conditions])                              
@@ -80,13 +81,23 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
         'on_frame',
         'Eye 1 Pupil Area',
         'Eye 2 Pupil Area',
-        'Eye 1 Horizontal AV',
+        'Eye 1 Hpref_orizontal AV',
         'Eye 1 Vertical AV',
-        'Eye 2 Horizontal AV',
+        'Eye 2 Hpref_orizontal AV',
         'Eye 2 Vertical AV'
         ])
 
     for roi in rois:
+        pref_sf = roi.dtpref_orientationsmeans.first.peak_sf
+        pref_ori = roi.dtpref_orientationsmeans.first.value
+        pref_ori = orientations[np.where(np.abs(orientations-pref_ori) == np.min(np.abs(orientations-pref_ori)))]
+        
+        # find preferred sf/orientation trials
+        pref_trials = roi.dttrialdff0s.filter_by(trial_ori = pref_ori,trial_sf = pref_sf)
+
+        # get on_frames of preferred trials
+        pref_on_frames = [int(trial.attributes['trial_on_time']*framerate) for trial in pref_trials]
+
         # creates tuples of on_frame and r-value 
         r_value = [
                 (np.int64(trial.trial_on_time*framerate), 
@@ -97,6 +108,8 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
 
         # create dataframe from r-values
         dataset = pd.DataFrame(r_value,columns=['on_frame','r-value'])
+        dataset['Pref r-value'] = dataset['r-value']
+        dataset['Pref r-value'].loc[~dataset['on_frame'].isin(pref_on_frames)] = np.nan
 
         # merge data into one dataset
         dataset = pd.merge(dataset,sv_dataset,on='on_frame')
