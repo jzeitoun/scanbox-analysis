@@ -20,7 +20,7 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
     rois = [roi for roi in workspace.rois]
     framerate = io.condition.framerate
     number_frames = rois[0].dtorientationsmeans.first.on_frames
-    pref_orientations = np.array(io.condition.orientations)
+    orientations = np.array(io.condition.orientations)
 
     on_times = np.array([d['on_time'] for d in conditions])                                
     off_times = np.array([d['off_time'] for d in conditions])                              
