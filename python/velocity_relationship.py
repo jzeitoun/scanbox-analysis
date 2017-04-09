@@ -117,8 +117,8 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
         dataset['Rmax'][0] = peak_r_max.attributes['value']['r_max']
     
         # add column for anova each p at pref spatial freq
-        dataset['Anova Each P'] = np.nan
-        dataset['Anova Each P'][0] = roi.dtanovaeachs.filter_by(trial_sf=pref_sf)[0].p
+        dataset['Pref Anova Each P'] = np.nan
+        dataset['Pref Anova Each P'][0] = roi.dtanovaeachs.filter_by(trial_sf=pref_sf)[0].p
 
         # merge data into one dataset
         dataset = pd.merge(dataset,sv_dataset,on='on_frame')
