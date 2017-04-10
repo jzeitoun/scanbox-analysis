@@ -165,6 +165,5 @@ function save_svg_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-%subplots=findobj(handles.avgtrace_panel,'Type','axes');
 mkdir([handles.fname(1:end-4), '_', handles.current_roi])
 save_mean_traces(handles.merged_rois.(handles.current_roi),handles.fname,handles.current_roi);
