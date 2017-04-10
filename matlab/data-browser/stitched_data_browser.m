@@ -22,7 +22,7 @@ function varargout = stitched_data_browser(varargin)
 
 % Edit the above text to modify the response to help stitched_data_browser
 
-% Last Modified by GUIDE v2.5 06-Apr-2017 16:16:00
+% Last Modified by GUIDE v2.5 10-Apr-2017 15:53:36
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -114,8 +114,11 @@ plot_mean_traces(handles.merged_rois.(selected_roi),handles.avgtrace_panel);
 plot_t_curve(handles.merged_rois.(selected_roi),handles.t_curve_axes);
 plot_stats(handles.merged_rois.(selected_roi),handles.uitable);
 
-% update current_roi handle
+% Update current_roi handle
 handles.current_roi = selected_roi;
+
+% Update handles structure
+guidata(hObject, handles);
 
 
 % --- Executes during object creation, after setting all properties.
@@ -157,13 +160,11 @@ delete(fig);
 
 
 % --------------------------------------------------------------------
-function save_pdf_Callback(hObject, eventdata, handles)
+function save_svg_Callback(hObject, eventdata, handles)
 % hObject    handle to save_fig (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-subplots=findobj(handles.avgtrace_panel,'Type','axes');
-fig = figure();
-s = copyobj(subplots,fig);
-saveas(fig,[handles.fname(1:end-4), '_', handles.current_roi, '.pdf']);
-delete(fig);
+%subplots=findobj(handles.avgtrace_panel,'Type','axes');
+mkdir([handles.fname(1:end-4), '_', handles.current_roi])
+save_mean_traces(handles.merged_rois.(handles.current_roi),handles.fname,handles.current_roi);
