@@ -31,60 +31,61 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
     on_idx = zip(on_frames,on_frames+number_frames+1)                                       
     #off_idx = zip(off_frames,np.append(on_frames[1:],on_frames[-1] + min(np.diff(on_frames))))
 
-    # generate velocity data
-    smooth_data = findSmoothVelocity(smoothwalk_file)
+    '''Not using velocity for now'''
+    ## generate velocity data
+    #smooth_data = findSmoothVelocity(smoothwalk_file)
 
-    # adjust to zero-indexing
-    smooth_data['Count'] = np.int64(smooth_data['Count'])-1
+    ## adjust to zero-indexing
+    #smooth_data['Count'] = np.int64(smooth_data['Count'])-1
 
-    # ensure velocity values are positive
-    smooth_data['Velocity'] = np.abs(smooth_data['Velocity'])
+    ## ensure velocity values are positive
+    #smooth_data['Velocity'] = np.abs(smooth_data['Velocity'])
 
-    # extract mean of velocity for on_frames
-    sorted_mean_velocity = [
-            (on[0],
-                np.mean(smooth_data.set_index('Count').loc[on[0]:on[1]-1]['Velocity'].as_matrix())
-                ) for on in on_idx
-            ]
+    ## extract mean of velocity for on_frames
+    #sorted_mean_velocity = [
+    #        (on[0],
+    #            np.mean(smooth_data.set_index('Count').loc[on[0]:on[1]-1]['Velocity'].as_matrix())
+    #            ) for on in on_idx
+    #        ]
 
-    # create dataframe from sorted_mean_velocities
-    sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','Velocity'])
+    ## create dataframe from sorted_mean_velocities
+    #sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','Velocity'])
     
     # generate eye data
     area_1, angular_rotation_1 = analyze_eye(eye1_data)
     area_2, angular_rotation_2 = analyze_eye(eye2_data)
 
-    # take derivative of angular rotations
-    angular_rotation_1[1:,0] = np.diff(angular_rotation_1[:,0])
-    angular_rotation_1[0,0] = np.nan
-    angular_rotation_1[1:,1] = np.diff(angular_rotation_1[:,1])
-    angular_rotation_1[0,1] = np.nan
-    angular_rotation_2[1:,0] = np.diff(angular_rotation_2[:,0])
-    angular_rotation_2[0,0] = np.nan
-    angular_rotation_2[1:,1] = np.diff(angular_rotation_2[:,1])
-    angular_rotation_2[0,1] = np.nan
+    ## take derivative of angular rotations
+    #angular_rotation_1[1:,0] = np.diff(angular_rotation_1[:,0])
+    #angular_rotation_1[0,0] = np.nan
+    #angular_rotation_1[1:,1] = np.diff(angular_rotation_1[:,1])
+    #angular_rotation_1[0,1] = np.nan
+    #angular_rotation_2[1:,0] = np.diff(angular_rotation_2[:,0])
+    #angular_rotation_2[0,0] = np.nan
+    #angular_rotation_2[1:,1] = np.diff(angular_rotation_2[:,1])
+    #angular_rotation_2[0,1] = np.nan
 
     # extract mean eye metrics for all on_frames
     sorted_mean_eye_data = [
             (on[0],
                 np.mean(area_1[on[0]:on[1]]),
-                np.mean(area_2[on[0]:on[1]]),
-                np.mean(angular_rotation_1[on[0]:on[1],0]),
-                np.mean(angular_rotation_1[on[0]:on[1],1]),
-                np.mean(angular_rotation_2[on[0]:on[1],0]),
-                np.mean(angular_rotation_2[on[0]:on[1],1])
+                np.mean(area_2[on[0]:on[1]])#,
+                #np.mean(angular_rotation_1[on[0]:on[1],0]),
+                #np.mean(angular_rotation_1[on[0]:on[1],1]),
+                #np.mean(angular_rotation_2[on[0]:on[1],0]),
+                #np.mean(angular_rotation_2[on[0]:on[1],1])
                 ) for on in on_idx
             ]
 
     # create dataframe from sorted_
     eye_dataset = pd.DataFrame(sorted_mean_eye_data,columns=[
         'on_frame',
-        'Eye 1 Pupil Area',
-        'Eye 2 Pupil Area',
-        'Eye 1 Horizontal AV',
-        'Eye 1 Vertical AV',
-        'Eye 2 Horizontal AV',
-        'Eye 2 Vertical AV'
+        'Eye 1 Mean Pupil Area',
+        'Eye 2 Mean Pupil Area'#,
+        #'Eye 1 Horizontal AR',
+        #'Eye 1 Vertical AR',
+        #'Eye 2 Horizontal AR',
+        #'Eye 2 Vertical AR'
         ])
 
     for roi in rois:
@@ -120,6 +121,10 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
         dataset['Pref Anova Each P'] = np.nan
         dataset['Pref Anova Each P'][0] = roi.dtanovaeachs.filter_by(trial_sf=pref_sf)[0].p
 
+        # add column for trial_sf and orientation
+        dataset['trial_sf'] = [c['sf'] for c in conditions]
+        dataset['trial_ori'] = [c['ori'] for c in conditions]
+
         # merge data into one dataset
         dataset = pd.merge(dataset,sv_dataset,on='on_frame')
         dataset = pd.merge(dataset,eye_dataset,on='on_frame')
@@ -127,3 +132,5 @@ def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
         # pickle data
         dataset.to_pickle(os.path.join(dir_path,str(roi.params.cell_id) + '_analysis.pickle'))
     #import ipdb; ipdb.set_trace()
+
+
