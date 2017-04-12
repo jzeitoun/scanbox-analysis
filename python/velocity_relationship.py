@@ -8,7 +8,7 @@ from pacu.core.io.scanbox.impl2 import ScanboxIO
 from readSmoothWalkVelocity import findSmoothVelocity
 from analyze_eye import analyze_eye
 
-def find_relationship(io_file,_workspace,smoothwalk_file,eye1_data,eye2_data):
+def find_relationship(io_file,_workspace,eye1_data,eye2_data):
     if '.io' in io_file:                                                       
         io_file = io_file[:-3]                                                 
     os.mkdir(io_file + '-analysis')                                            
