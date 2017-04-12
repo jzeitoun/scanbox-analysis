@@ -126,7 +126,7 @@ def find_relationship(io_file,_workspace,eye1_data,eye2_data):
         dataset['trial_ori'] = [c['ori'] for c in conditions]
 
         # merge data into one dataset
-        dataset = pd.merge(dataset,sv_dataset,on='on_frame')
+        #dataset = pd.merge(dataset,sv_dataset,on='on_frame')
         dataset = pd.merge(dataset,eye_dataset,on='on_frame')
 
         # pickle data
