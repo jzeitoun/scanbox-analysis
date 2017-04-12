@@ -62,7 +62,7 @@ def sbxread(filename):
         info['recordsPerBuffer'] = info['recordsPerBuffer']*2
      
     # Determine number of frames in whole file (removed '-1')
-    info['length'] = os.path.getsize(filename + '.sbx')/info['recordsPerBuffer']/info['sz'][1]*factor/4
+    info['length'] = int(os.path.getsize(filename + '.sbx')/info['recordsPerBuffer']/info['sz'][1]*factor/4)
     
     info['nSamples'] = info['sz'][1] * info['recordsPerBuffer'] * 2 * info['nChan']
      
