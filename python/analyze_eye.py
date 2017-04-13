@@ -130,8 +130,8 @@ def analyze_eye(filename,write=0):
             # if no contour found, fill with last value 
             else:
                 centroid_trace[i] = centroid_trace[i-1] 
-                raw_pos_trace[i,0] = raw_pos_trace[i-1] 
-                raw_pos_trace[i,1] = raw_pos_trace[i-1]                 
+                raw_pos_trace[i,0] = raw_pos_trace[i-1,0] 
+                raw_pos_trace[i,1] = raw_pos_trace[i-1,1]                 
 
         angular_rotation = np.zeros(centroid_trace.shape) 
         angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) * factor # Eh in radians
