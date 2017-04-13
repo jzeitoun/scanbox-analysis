@@ -28,7 +28,8 @@ def analyze_eye(filename,write=0):
 
     eye_data_center = np.array(eye_data.shape[1:3])/2 # find center of entire frame
     area_trace = np.zeros(eye_data.shape[0]) # pupillary area in mm^2
-    centroid_trace = np.int32(np.zeros([eye_data.shape[0],2])) # position of centroid in xy coordinates
+    centroid_trace = np.zeros([eye_data.shape[0],2],dtype='int64') # position of centroid in xy coordinates
+    raw_pos_trace = centroid_trace.copy()
     x_offset = (eye_data.shape[2] - 2*bounding_region)/2 # x distance between full frame edge and cropped edge
     y_offset = (eye_data.shape[1] - 2*bounding_region)/2 # y distance between full frame edge and cropped edge
     center = np.array([bounding_region,bounding_region]) # center of cropped data
@@ -124,16 +125,29 @@ def analyze_eye(filename,write=0):
                 # store pupil centroid
                 centroid_trace[i] = raw_pupil_centroid - center
                 centroid_trace[i,1] = -centroid_trace[i,1]
+                raw_pos_trace[i,0] = raw_pupil_centroid[0]+x_offset 
+                raw_pos_trace[i,1] = raw_pupil_centroid[1]+y_offset             
             # if no contour found, fill with last value 
             else:
                 centroid_trace[i] = centroid_trace[i-1] 
+                raw_pos_trace[i,0] = raw_pos_trace[i-1] 
+                raw_pos_trace[i,1] = raw_pos_trace[i-1]                 
+
         angular_rotation = np.zeros(centroid_trace.shape) 
         angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) * factor # Eh in radians
         angular_rotation[:,1] = np.arcsin((centroid_trace[:,1]/pixels_per_mm)/r_effective) # Ev in radians
         angular_rotation = np.rad2deg(angular_rotation) # (Eh,Ev) into degrees
 
-        return area_trace,angular_rotation
-        #np.save(filename + '_pupil_area',area_trace)
-        #np.save(filename + '_raw_xy_position',centroid_trace) # don't need to save this, saving angular velocity instead
-        #np.save(filename + '_angular_rotation',angular_rotation)
+        # create raw xy trace
+        
+        
+        #raw_pos_trace = centroid_trace.copy()
+        #raw_pos_trace[:,0] = raw_pos_trace[:,0] + x_offset
+        #raw_pos_trace[:,1] = raw_pos_trace[:,1] + y_offset 
 
+        np.save(filename + '_pupil_area',area_trace)
+        np.save(filename + '_raw_xy_position', raw_pos_trace)
+        np.save(filename + '_norm_xy_position',centroid_trace) # don't need to save this, saving angular velocity instead
+        np.save(filename + '_angular_rotation',angular_rotation)
+
+        return area_trace,angular_rotation
