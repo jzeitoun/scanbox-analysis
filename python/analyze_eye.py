@@ -40,7 +40,8 @@ def analyze_eye(filename,write=0):
     center = np.array([bounding_region,bounding_region]) # center of cropped data
 
     circ_score_list = []
-    
+    bad_count = 0
+
     if write:
         rgb_eye_data = np.zeros([eye_data.shape[0],eye_data.shape[1],eye_data.shape[2],3],dtype='uint8')
         for i in range(eye_data.shape[0]):
@@ -70,38 +71,64 @@ def analyze_eye(filename,write=0):
                 dist_list = np.sum(np.abs(centers - center),1)
                 area_trace[i] = areas[np.where(dist_list == min(dist_list))[0][0]]
                 raw_pupil_centroid = centers[np.where(dist_list == min(dist_list))[0][0]]
+                
                 # store pupil centroid
                 centroid_trace[i] = raw_pupil_centroid - center
                 centroid_trace[i,1] = -centroid_trace[i,1]
-                # draw pupil contour
+
+                # select center contour
                 center_contour = hulls[np.where(dist_list == min(dist_list))[0][0]]
-
-                # determine circularity rating
-                #leftmost = tuple(center_contour[center_contour[:,:,0].argmin()][0])
-                #rightmost = tuple(center_contour[center_contour[:,:,0].argmax()][0])
-                #topmost = tuple(center_contour[center_contour[:,:,1].argmin()][0])
-                #bottommost = tuple(center_contour[center_contour[:,:,1].argmax()][0])
-
-                center_surround_distances = [math.hypot(point[0][0] - centroid_trace[i,0],point[0][1] - centroid_trace[i,1]) for point in center_contour]
+                
+                # calculate circularity score
+                center_surround_distances = [math.hypot(point[0][0] - raw_pupil_centroid[0],point[0][1] - raw_pupil_centroid[1]) for point in center_contour]
                 min_dist = min(center_surround_distances)
                 max_dist = max(center_surround_distances)
                 circ_score = max_dist/min_dist
-
-
-                #h_distance = math.hypot(rightmost[0] - leftmost[0], rightmost[1] - leftmost[1])
-                #v_distance = math.hypot(topmost[0] - bottommost[0], topmost[1] - bottommost[1])
-                #circ_score = h_distance/v_distance
                 circ_score_list.append(circ_score)
-                
-                #import ipdb; ipdb.set_trace()
-
-                if circ_score > 1.7: #or circ_score < 1.3:
+            
+                # if score is bad
+                if circ_score > 1.25: 
                     color = (255,0,0)
+                    centroid_trace[i] = centroid_trace[i-1]
+                    raw_pos_trace[i] = raw_pos_trace[i-1]
+                    bad_count += 1
+                # if score is good
                 else:
                     color = (0,255,0)
+                    centroid_trace[i] = raw_pupil_centroid - center
+                    raw_pos_trace[i,0] = raw_pupil_centroid[0]+x_offset 
+                    raw_pos_trace[i,1] = raw_pupil_centroid[1]+y_offset
 
+                # offset contour to place in middle of frame
                 center_contour[:,0][:,0] = center_contour[:,0][:,0] + x_offset
-                center_contour[:,0][:,1] = center_contour[:,0][:,1] + y_offset
+                center_contour[:,0][:,1] = center_contour[:,0][:,1] + y_offset 
+
+                # convert eye frame to rgb
+                rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
+                
+                # draw pupil contour
+                img = cv2.drawContours(rgb_eye_frame, [center_contour], 0, color, 2)
+                
+                # draw pupil centroid
+                cv2.rectangle(rgb_eye_frame,
+                    (raw_pupil_centroid[0]+x_offset - 2, raw_pupil_centroid[1]+y_offset - 2), 
+                    (raw_pupil_centroid[0]+x_offset + 2, raw_pupil_centroid[1]+y_offset + 2), 
+                    color, 
+                    -1)
+                
+                # stamp circularity score
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                cv2.putText(rgb_eye_frame,str(circ_score),(10,200), font, 1, color, 2) 
+
+                rgb_eye_data[i] = rgb_eye_frame
+                
+            # if no contour found, fill with last value 
+            else:
+                centroid_trace[i] = centroid_trace[i-1] 
+                raw_pos_trace[i] = raw_pos_trace[i-1]
+                rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
+                color = (255,255,255)
+                # convert eye frame to rgb
                 rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
                 # draw pupil contour
                 img = cv2.drawContours(rgb_eye_frame, [center_contour], 0, color, 2)
@@ -111,23 +138,13 @@ def analyze_eye(filename,write=0):
                     (raw_pupil_centroid[0]+x_offset + 2, raw_pupil_centroid[1]+y_offset + 2), 
                     color, 
                     -1)
-                
+                # stamp circularity score
                 font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(rgb_eye_frame,'Hello World!',(10,300), font, 1,color,2) 
-
-                raw_pos_trace[i,0] = raw_pupil_centroid[0]+x_offset 
-                raw_pos_trace[i,1] = raw_pupil_centroid[1]+y_offset
-
-                # draw eye centroid
-                #cv2.rectangle(rgb_eye_frame,(centroid[0] - 2, centroid[1] - 2), (centroid[0] + 2, centroid[1] + 2), (0, 128, 255), -1)            
-                rgb_eye_data[i] = rgb_eye_frame
+                cv2.putText(rgb_eye_frame,str(circ_score),(10,200), font, 1, color, 2) 
                 
-            # if no contour found, fill with last value 
-            else:
-                centroid_trace[i] = centroid_trace[i-1] 
-                rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
                 rgb_eye_data[i] = rgb_eye_frame
-
+        
+        print 'Bad Counts:',bad_count
         angular_rotation = np.zeros(centroid_trace.shape) 
         angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) # Eh in radians
         angular_rotation[:,1] = np.arcsin((centroid_trace[:,1]/pixels_per_mm)/r_effective) # Ev in radians
@@ -169,17 +186,38 @@ def analyze_eye(filename,write=0):
                 dist_list = np.sum(np.abs(centers - center),1)
                 area_trace[i] = areas[np.where(dist_list == min(dist_list))[0][0]]
                 raw_pupil_centroid = centers[np.where(dist_list == min(dist_list))[0][0]]
+                
                 # store pupil centroid
                 centroid_trace[i] = raw_pupil_centroid - center
                 centroid_trace[i,1] = -centroid_trace[i,1]
-                raw_pos_trace[i,0] = raw_pupil_centroid[0]+x_offset 
-                raw_pos_trace[i,1] = raw_pupil_centroid[1]+y_offset             
+
+                # select center contour
+                center_contour = hulls[np.where(dist_list == min(dist_list))[0][0]]
+                
+                # calculate circularity score
+                center_surround_distances = [math.hypot(point[0][0] - raw_pupil_centroid[0],point[0][1] - raw_pupil_centroid[1]) for point in center_contour]
+                min_dist = min(center_surround_distances)
+                max_dist = max(center_surround_distances)
+                circ_score = max_dist/min_dist
+                circ_score_list.append(circ_score)
+            
+                # if score is bad
+                if circ_score > 1.25: 
+                    centroid_trace[i] = centroid_trace[i-1]
+                    raw_pos_trace[i] = raw_pos_trace[i-1]
+                    bad_count += 1
+                # if score is good
+                else:
+                    centroid_trace[i] = raw_pupil_centroid - center
+                    raw_pos_trace[i,0] = raw_pupil_centroid[0]+x_offset 
+                    raw_pos_trace[i,1] = raw_pupil_centroid[1]+y_offset
             # if no contour found, fill with last value 
             else:
                 centroid_trace[i] = centroid_trace[i-1] 
                 raw_pos_trace[i,0] = raw_pos_trace[i-1,0] 
                 raw_pos_trace[i,1] = raw_pos_trace[i-1,1]                 
-
+        
+        print 'Bad Counts:',bad_count
         angular_rotation = np.zeros(centroid_trace.shape) 
         angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) * factor # Eh in radians
         angular_rotation[:,1] = np.arcsin((centroid_trace[:,1]/pixels_per_mm)/r_effective) # Ev in radians
