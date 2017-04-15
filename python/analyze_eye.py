@@ -69,7 +69,7 @@ def analyze_eye(filename,write=0):
 
             if centers != []:
                 dist_list = np.sum(np.abs(centers - center),1)
-                area_trace[i] = areas[np.where(dist_list == min(dist_list))[0][0]]
+                
                 raw_pupil_centroid = centers[np.where(dist_list == min(dist_list))[0][0]]
                 
                 # store pupil centroid
@@ -91,6 +91,7 @@ def analyze_eye(filename,write=0):
                     color = (255,0,0)
                     centroid_trace[i] = centroid_trace[i-1]
                     raw_pos_trace[i] = raw_pos_trace[i-1]
+                    area_trace[i] = area_trace[i-1]
                     bad_count += 1
                 # if score is good
                 else:
@@ -98,6 +99,7 @@ def analyze_eye(filename,write=0):
                     centroid_trace[i] = raw_pupil_centroid - center
                     raw_pos_trace[i,0] = raw_pupil_centroid[0]+x_offset 
                     raw_pos_trace[i,1] = raw_pupil_centroid[1]+y_offset
+                    area_trace[i] = areas[np.where(dist_list == min(dist_list))[0][0]]
 
                 # offset contour to place in middle of frame
                 center_contour[:,0][:,0] = center_contour[:,0][:,0] + x_offset
@@ -124,8 +126,11 @@ def analyze_eye(filename,write=0):
                 
             # if no contour found, fill with last value 
             else:
+                # forward fill
                 centroid_trace[i] = centroid_trace[i-1] 
                 raw_pos_trace[i] = raw_pos_trace[i-1]
+                area_trace[i] = area_trace[i-1]
+                
                 rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
                 color = (255,255,255)
                 # convert eye frame to rgb
@@ -205,18 +210,22 @@ def analyze_eye(filename,write=0):
                 if circ_score > 1.25: 
                     centroid_trace[i] = centroid_trace[i-1]
                     raw_pos_trace[i] = raw_pos_trace[i-1]
+                    area_trace[i] = area_trace[i-1]
                     bad_count += 1
                 # if score is good
                 else:
                     centroid_trace[i] = raw_pupil_centroid - center
                     raw_pos_trace[i,0] = raw_pupil_centroid[0]+x_offset 
                     raw_pos_trace[i,1] = raw_pupil_centroid[1]+y_offset
+                    area_trace[i] = areas[np.where(dist_list == min(dist_list))[0][0]]
             # if no contour found, fill with last value 
             else:
+                # forward fill
                 centroid_trace[i] = centroid_trace[i-1] 
                 raw_pos_trace[i,0] = raw_pos_trace[i-1,0] 
                 raw_pos_trace[i,1] = raw_pos_trace[i-1,1]                 
-        
+                area_trace[i] = area_trace[i-1]
+
         print 'Bad Counts:',bad_count
         angular_rotation = np.zeros(centroid_trace.shape) 
         angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) * factor # Eh in radians
