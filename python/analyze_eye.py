@@ -2,6 +2,9 @@ import numpy as np
 import h5py
 import cv2
 import tifffile as tif
+import math
+import os
+import sys
 
 def analyze_eye(filename,write=0):
     '''
@@ -13,16 +16,18 @@ def analyze_eye(filename,write=0):
         bounding_region = 100
         thresh_val = 75 
         factor = -1
-        pixels_per_mm = 100.0
+        pixels_per_mm = 138.0/4
     else:
         bounding_region = 80
         thresh_val = 44
         factor = 1
-        pixels_per_mm = 100.0
+        pixels_per_mm = 195.0/4
     r_effective = 1.25 # radius of pupil to center of eyeball
     print 'Using threshold value of: ', thresh_val
 
     # read in eye data
+    if '.mat' in filename:
+        filename = filename[:-4]
     data = h5py.File(filename + '.mat')
     eye_data = np.squeeze(np.array(data['data'])).transpose(0,2,1)
 
@@ -34,8 +39,10 @@ def analyze_eye(filename,write=0):
     y_offset = (eye_data.shape[1] - 2*bounding_region)/2 # y distance between full frame edge and cropped edge
     center = np.array([bounding_region,bounding_region]) # center of cropped data
 
+    circ_score_list = []
+    
     if write:
-        rgb_eye_data = np.uint8(np.zeros([eye_data.shape[0],eye_data.shape[1],eye_data.shape[2],3]))
+        rgb_eye_data = np.zeros([eye_data.shape[0],eye_data.shape[1],eye_data.shape[2],3],dtype='uint8')
         for i in range(eye_data.shape[0]):
             # crop eye data
             eye_frame = eye_data[i,
@@ -58,6 +65,7 @@ def analyze_eye(filename,write=0):
             # find centers of each moment
             centers = [[int(m['m10']/m['m00']),int(m['m01']/m['m00'])] if m['m00'] != 0 else [0,0] for m in M] 
             # select hull with center that is closest to image center and calculate area
+
             if centers != []:
                 dist_list = np.sum(np.abs(centers - center),1)
                 area_trace[i] = areas[np.where(dist_list == min(dist_list))[0][0]]
@@ -67,16 +75,49 @@ def analyze_eye(filename,write=0):
                 centroid_trace[i,1] = -centroid_trace[i,1]
                 # draw pupil contour
                 center_contour = hulls[np.where(dist_list == min(dist_list))[0][0]]
+
+                # determine circularity rating
+                #leftmost = tuple(center_contour[center_contour[:,:,0].argmin()][0])
+                #rightmost = tuple(center_contour[center_contour[:,:,0].argmax()][0])
+                #topmost = tuple(center_contour[center_contour[:,:,1].argmin()][0])
+                #bottommost = tuple(center_contour[center_contour[:,:,1].argmax()][0])
+
+                center_surround_distances = [math.hypot(point[0][0] - centroid_trace[i,0],point[0][1] - centroid_trace[i,1]) for point in center_contour]
+                min_dist = min(center_surround_distances)
+                max_dist = max(center_surround_distances)
+                circ_score = max_dist/min_dist
+
+
+                #h_distance = math.hypot(rightmost[0] - leftmost[0], rightmost[1] - leftmost[1])
+                #v_distance = math.hypot(topmost[0] - bottommost[0], topmost[1] - bottommost[1])
+                #circ_score = h_distance/v_distance
+                circ_score_list.append(circ_score)
+                
+                #import ipdb; ipdb.set_trace()
+
+                if circ_score > 1.7: #or circ_score < 1.3:
+                    color = (255,0,0)
+                else:
+                    color = (0,255,0)
+
                 center_contour[:,0][:,0] = center_contour[:,0][:,0] + x_offset
                 center_contour[:,0][:,1] = center_contour[:,0][:,1] + y_offset
                 rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
-                img = cv2.drawContours(rgb_eye_frame, [center_contour], 0, (0,255,0), 2)
+                # draw pupil contour
+                img = cv2.drawContours(rgb_eye_frame, [center_contour], 0, color, 2)
                 # draw pupil centroid
                 cv2.rectangle(rgb_eye_frame,
                     (raw_pupil_centroid[0]+x_offset - 2, raw_pupil_centroid[1]+y_offset - 2), 
                     (raw_pupil_centroid[0]+x_offset + 2, raw_pupil_centroid[1]+y_offset + 2), 
-                    (0, 255, 0), 
+                    color, 
                     -1)
+                
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                cv2.putText(rgb_eye_frame,'Hello World!',(10,300), font, 1,color,2) 
+
+                raw_pos_trace[i,0] = raw_pupil_centroid[0]+x_offset 
+                raw_pos_trace[i,1] = raw_pupil_centroid[1]+y_offset
+
                 # draw eye centroid
                 #cv2.rectangle(rgb_eye_frame,(centroid[0] - 2, centroid[1] - 2), (centroid[0] + 2, centroid[1] + 2), (0, 128, 255), -1)            
                 rgb_eye_data[i] = rgb_eye_frame
@@ -86,15 +127,21 @@ def analyze_eye(filename,write=0):
                 centroid_trace[i] = centroid_trace[i-1] 
                 rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
                 rgb_eye_data[i] = rgb_eye_frame
+
         angular_rotation = np.zeros(centroid_trace.shape) 
         angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) # Eh in radians
         angular_rotation[:,1] = np.arcsin((centroid_trace[:,1]/pixels_per_mm)/r_effective) # Ev in radians
         angular_rotation = np.rad2deg(angular_rotation) # (Eh,Ev) into degrees
 
+        raw_pos_trace = [[eye_data.shape[1],eye_data.shape[2]],raw_pos_trace]
+
+        #import ipdb; ipdb.set_trace()
+        np.save(filename + '_circ_score',circ_score_list)
         np.save(filename + '_pupil_area',area_trace)
-        #np.save(filename + '_raw_xy_position',centroid_trace) # don't need to save this, saving angular velocity instead
+        np.save(filename + '_raw_xy_position', raw_pos_trace)
         np.save(filename + '_angular_rotation',angular_rotation)
         tif.imsave(filename + '_tracked.tif',rgb_eye_data)
+
     else:
         for i in range(eye_data.shape[0]):
             # crop eye data
@@ -138,16 +185,20 @@ def analyze_eye(filename,write=0):
         angular_rotation[:,1] = np.arcsin((centroid_trace[:,1]/pixels_per_mm)/r_effective) # Ev in radians
         angular_rotation = np.rad2deg(angular_rotation) # (Eh,Ev) into degrees
 
-        # create raw xy trace
+        # include frame dimensions in raw trace data
+        raw_pos_trace = [[eye_data.shape[1],eye_data.shape[2]],raw_pos_trace]
         
-        
-        #raw_pos_trace = centroid_trace.copy()
-        #raw_pos_trace[:,0] = raw_pos_trace[:,0] + x_offset
-        #raw_pos_trace[:,1] = raw_pos_trace[:,1] + y_offset 
-
         np.save(filename + '_pupil_area',area_trace)
         np.save(filename + '_raw_xy_position', raw_pos_trace)
-        np.save(filename + '_norm_xy_position',centroid_trace) # don't need to save this, saving angular velocity instead
+        np.save(filename + '_norm_xy_position',centroid_trace)
         np.save(filename + '_angular_rotation',angular_rotation)
 
         return area_trace,angular_rotation
+
+if __name__ == '__main__':
+   
+    file_list = os.listdir(os.getcwd())
+    file_list = [filename for filename in file_list if sys.argv[1] in filename]
+
+    for filename in file_list:
+        analyze_eye(filename)
