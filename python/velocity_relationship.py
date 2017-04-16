@@ -60,7 +60,7 @@ def find_relationship(io_file,_workspace):
     angular_rotation_2 = np.load(base_filename + '_eye2_angular_rotation.npy')
     # mask nan values, which represent excluded frames
     area_1 = np.ma.masked_invalid(area_1)
-    area_2 = np.ma.masked_inavlid(area_2)
+    area_2 = np.ma.masked_invalid(area_2)
 
     # take derivative of angular rotations
     #angular_rotation_1[1:,0] = np.diff(angular_rotation_1[:,0])
