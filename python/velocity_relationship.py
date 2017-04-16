@@ -54,8 +54,11 @@ def find_relationship(io_file,_workspace,eye1_data,eye2_data):
     # generate eye data
     area_1, angular_rotation_1 = analyze_eye(eye1_data)
     area_2, angular_rotation_2 = analyze_eye(eye2_data)
+    # mask nan values, which represent frames excluded frames
+    area_1 = np.ma.masked_invalid(area_1)
+    area_2 = np.ma.masked_inavlid(area_2)
 
-    ## take derivative of angular rotations
+    # take derivative of angular rotations
     #angular_rotation_1[1:,0] = np.diff(angular_rotation_1[:,0])
     #angular_rotation_1[0,0] = np.nan
     #angular_rotation_1[1:,1] = np.diff(angular_rotation_1[:,1])
