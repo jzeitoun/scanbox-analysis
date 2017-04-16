@@ -91,7 +91,8 @@ def analyze_eye(filename,write=0):
                     color = (255,0,0)
                     centroid_trace[i] = centroid_trace[i-1]
                     raw_pos_trace[i] = raw_pos_trace[i-1]
-                    area_trace[i] = area_trace[i-1]
+                    # exclude value from pupil size trace
+                    area_trace[i] = np.nan 
                     bad_count += 1
                 # if score is good
                 else:
@@ -129,7 +130,8 @@ def analyze_eye(filename,write=0):
                 # forward fill
                 centroid_trace[i] = centroid_trace[i-1] 
                 raw_pos_trace[i] = raw_pos_trace[i-1]
-                area_trace[i] = area_trace[i-1]
+                # exclude value from pupil size trace
+                area_trace[i] = np.nan 
                 
                 rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
                 color = (255,255,255)
@@ -210,7 +212,8 @@ def analyze_eye(filename,write=0):
                 if circ_score > 1.25: 
                     centroid_trace[i] = centroid_trace[i-1]
                     raw_pos_trace[i] = raw_pos_trace[i-1]
-                    area_trace[i] = area_trace[i-1]
+                    # exclude value from pupil size trace
+                    area_trace[i] = np.nan 
                     bad_count += 1
                 # if score is good
                 else:
@@ -224,7 +227,8 @@ def analyze_eye(filename,write=0):
                 centroid_trace[i] = centroid_trace[i-1] 
                 raw_pos_trace[i,0] = raw_pos_trace[i-1,0] 
                 raw_pos_trace[i,1] = raw_pos_trace[i-1,1]                 
-                area_trace[i] = area_trace[i-1]
+                # exclude value from pupil size trace
+                area_trace[i] = np.nan 
 
         print 'Bad Counts:',bad_count
         angular_rotation = np.zeros(centroid_trace.shape) 
