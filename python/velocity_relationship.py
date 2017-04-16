@@ -54,10 +54,9 @@ def find_relationship(io_file,_workspace):
     #sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','Velocity'])
     
     # generate eye data
-    area_1 = np.load(base_filename + '_eye1_raw_xy_position.npy')
+    area_1 = np.load(base_filename + '_eye1_pupil_area.npy')
     angular_rotation_1 = np.load(base_filename + '_eye1_angular_rotation.npy')
-    import ipdb; ipdb.set_trace()
-    area_2 = np.load(base_filename + '_eye2_raw_xy_position.npy') 
+    area_2 = np.load(base_filename + '_eye2_pupil_area.npy') 
     angular_rotation_2 = np.load(base_filename + '_eye2_angular_rotation.npy')
     # mask nan values, which represent excluded frames
     area_1 = np.ma.masked_invalid(area_1)
