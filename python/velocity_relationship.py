@@ -96,7 +96,7 @@ def find_relationship(io_file,_workspace):
         ])
 
     for roi in rois:
-        roi.refresh_all()
+        roi.dtorientationbestprefs.first.refresh()
         pref_sf = roi.dtorientationbestprefs.first.attributes['peak_sf']
         pref_ori = roi.dtorientationbestprefs.first.attributes['value']
         pref_ori = orientations[np.where(np.abs(orientations-pref_ori) == np.min(np.abs(orientations-pref_ori)))]
