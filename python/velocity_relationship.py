@@ -56,6 +56,7 @@ def find_relationship(io_file,_workspace):
     # generate eye data
     area_1 = np.load(base_filename + '_eye1_raw_xy_position.npy')
     angular_rotation_1 = np.load(base_filename + '_eye1_angular_rotation.npy')
+    import ipdb; ipdb.set_trace()
     area_2 = np.load(base_filename + '_eye2_raw_xy_position.npy') 
     angular_rotation_2 = np.load(base_filename + '_eye2_angular_rotation.npy')
     # mask nan values, which represent excluded frames
