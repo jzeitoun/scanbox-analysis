@@ -8,9 +8,11 @@ from pacu.core.io.scanbox.impl2 import ScanboxIO
 from readSmoothWalkVelocity import findSmoothVelocity
 from analyze_eye import analyze_eye
 
-def find_relationship(io_file,_workspace,eye1_data,eye2_data):
+def find_relationship(io_file,_workspace):
     if '.io' in io_file:                                                       
         io_file = io_file[:-3]                                                 
+    base_filename = io_file.split('_')[-3:]
+    base_filename = '_'.join(base_filename)
     os.mkdir(io_file + '-analysis')                                            
     dir_path = os.path.abspath(io_file + '-analysis')                          
     path = os.getcwd()                                                         
@@ -52,10 +54,10 @@ def find_relationship(io_file,_workspace,eye1_data,eye2_data):
     #sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','Velocity'])
     
     # generate eye data
-    area_1 = np.load(eye1_data + '_raw_xy_position.npy')
-    angular_rotation_1 = np.load(eye1_data + '_angular_rotation.npy')
-    area_2 = np.load(eye2_data + '_raw_xy_position.npy') 
-    angular_rotation_2 = np.load(eye2_data + '_angular_rotation.npy')
+    area_1 = np.load(base_filename + '_eye1_raw_xy_position.npy')
+    angular_rotation_1 = np.load(base_filename + '_eye1_angular_rotation.npy')
+    area_2 = np.load(base_filename + '_eye2_raw_xy_position.npy') 
+    angular_rotation_2 = np.load(base_filename + '_eye2_angular_rotation.npy')
     # mask nan values, which represent excluded frames
     area_1 = np.ma.masked_invalid(area_1)
     area_2 = np.ma.masked_inavlid(area_2)
