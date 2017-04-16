@@ -62,6 +62,8 @@ def find_relationship(io_file,_workspace):
     area_1 = np.ma.masked_invalid(area_1)
     area_2 = np.ma.masked_invalid(area_2)
 
+    import ipdb; ipdb.set_trace()
+
     # take derivative of angular rotations
     #angular_rotation_1[1:,0] = np.diff(angular_rotation_1[:,0])
     #angular_rotation_1[0,0] = np.nan
