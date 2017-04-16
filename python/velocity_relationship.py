@@ -52,9 +52,11 @@ def find_relationship(io_file,_workspace,eye1_data,eye2_data):
     #sv_dataset = pd.DataFrame(sorted_mean_velocity,columns=['on_frame','Velocity'])
     
     # generate eye data
-    area_1, angular_rotation_1 = analyze_eye(eye1_data)
-    area_2, angular_rotation_2 = analyze_eye(eye2_data)
-    # mask nan values, which represent frames excluded frames
+    area_1 = np.load(eye1_data + '_raw_xy_position.npy')
+    angular_rotation_1 = np.load(eye1_data + '_angular_rotation.npy')
+    area_2 = np.load(eye2_data + '_raw_xy_position.npy') 
+    angular_rotation_2 = np.load(eye2_data + '_angular_rotation.npy')
+    # mask nan values, which represent excluded frames
     area_1 = np.ma.masked_invalid(area_1)
     area_2 = np.ma.masked_inavlid(area_2)
 
