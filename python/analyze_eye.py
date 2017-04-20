@@ -153,7 +153,7 @@ def analyze_eye(filename,write=0):
         
         print 'Bad Counts:',bad_count
         angular_rotation = np.zeros(centroid_trace.shape) 
-        angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) # Eh in radians
+        angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) * factor # Eh in radians
         angular_rotation[:,1] = np.arcsin((centroid_trace[:,1]/pixels_per_mm)/r_effective) # Ev in radians
         angular_rotation = np.rad2deg(angular_rotation) # (Eh,Ev) into degrees
 
