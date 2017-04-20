@@ -16,12 +16,12 @@ def analyze_eye(filename,write=0):
         bounding_region = 100
         thresh_val = 75 
         factor = -1
-        pixels_per_mm = 138.0/4
+        pixels_per_mm = 195.0/4
     else:
         bounding_region = 80
         thresh_val = 44
         factor = 1
-        pixels_per_mm = 195.0/4
+        pixels_per_mm = 138.0/4
     r_effective = 1.25 # radius of pupil to center of eyeball
     print 'Using threshold value of: ', thresh_val
 
