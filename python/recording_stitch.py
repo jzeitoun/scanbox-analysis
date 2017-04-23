@@ -82,6 +82,7 @@ class stitched_data(object):
         ws.merge_cells('A1:A2')
         ws.merge_cells('B1:C1')
         ws.merge_cells('D1:E1')
+        ws.merge_cells('F1:I1')
         ws.merge_cells('R1:S1')
 
         for top,bottom in zip(ws['J1:Q1'][0],ws['J2:Q2'][0]):
