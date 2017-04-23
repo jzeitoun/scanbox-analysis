@@ -193,7 +193,7 @@ class stitched_data(object):
             ws.cell(row=idx,column=4).style = style
             ws.cell(row=idx,column=5).value = roi.dtsfreqfits.first.attributes['value']['rc33'].y
             ws.cell(row=idx,column=5).style = style
-            ws.cell(row=idx,column=6).value = round(roi.dtsfreqfits.attributes['value']['peak'],2)
+            ws.cell(row=idx,column=6).value = round(roi.dtsfreqfits.first.attributes['value']['peak'],2)
             ws.cell(row=idx,column=6).style = style
             ws.cell(row=idx,column=7).value = roi.dtsfreqfits.first.attributes['value']['pref']
             ws.cell(row=idx,column=7).style = style
