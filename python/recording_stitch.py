@@ -111,7 +111,7 @@ class stitched_data(object):
                                     )
 
         reg_cell = NamedStyle(name='regular')
-        reg_cell.alignment = Alignment(horizontal='center',
+        reg_cell.alignment = Alignment(horizontal=None,
                                      vertical='center',
                                      text_rotation=0,
                                      wrap_text=True,
@@ -127,7 +127,7 @@ class stitched_data(object):
                                              )
 
         sig_cell = NamedStyle(name='significant')
-        sig_cell.alignment = Alignment(horizontal='center',
+        sig_cell.alignment = Alignment(horizontal=None,
                                           vertical='center',
                                           text_rotation=0,
                                           wrap_text=True,
@@ -181,7 +181,6 @@ class stitched_data(object):
 
             ws.cell(row=idx,column=1).value = int(roi.rois[0].params.cell_id)
             ws.cell(row=idx,column=1).style = style
-            ws.cell(row=idx,column=1).alignment = Alignment(vertical='center',horizontal=None)
             ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['p']
             ws.cell(row=idx,column=2).style = style
             ws.cell(row=idx,column=3).value = roi.dtanovaalls.first.attributes['value']['f']
