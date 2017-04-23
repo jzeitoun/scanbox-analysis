@@ -53,7 +53,7 @@ class stitched_data(object):
             sorted_orientation_traces[k] = [dict(dtorientationsmean.attributes.items()[i] for i in [8,17]) for roi in merged_roi.rois for dtorientationsmean in roi.dtorientationsmeans if roi.workspace.name == k]
 	return sorted_orientation_traces
     	
-    def export_mat(self,filename=None):
+    def export_mat(self,p_value=.01,filename=None):
         merged_dict = {}
 	merged_dict['filenames'] = [fw[0][:-3] for fw in self.fw_array]
 	merged_dict['workspaces'] = [workspace.name for workspace in self.workspaces]
@@ -172,7 +172,7 @@ class stitched_data(object):
             cell.style = header
 
         for idx,roi in zip(idx_list,self.merged_rois):
-            if any([anovaeach.p < .01 for anovaeach in roi.dtanovaeachs]):
+            if any([anovaeach.p < p_value for anovaeach in roi.dtanovaeachs]):
                 style = sig_cell
             else:
                 style = reg_cell
@@ -190,7 +190,7 @@ class stitched_data(object):
                 ws.cell(row=idx,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
                 ws.cell(row=idx,column=5).value = roi.dtsfreqfits.first.attributes['value']['rc33'].y
             except AttributeError:
-                print 'No value found for "SF Cutoff Rel33."'
+                print 'No "SF Cutoff Rel33" found for cell ',roi.rois[0].params.cell_id
                 ws.cell(row=idx,column=4).value = None
                 ws.cell(row=idx,column=5).value = None 
             ws.cell(row=idx,column=4).style = style   
