@@ -176,7 +176,7 @@ class stitched_data(object):
         for idx,roi in zip(idx_list,self.merged_rois):
             if any([anovaeach.p < .01 for anovaeach in merged_2.dtanovaeachs]):
                 style = sig_cell
-            else
+            else:
                 style = reg_cell
 
             for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)]):
