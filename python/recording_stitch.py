@@ -6,6 +6,7 @@ from pacu.core.io.scanbox.impl2 import ScanboxIO
 from pacu.core.io.scanbox.view.trial_merged_roi import TrialMergedROIView
 
 from openpyxl import Workbook
+from openpyxl.styles import NamedStyle, PatternFill, Border, Side, Alignment, Protection, Font
 
 #import paramiko
 #from paramiko.client import SSHClient, SFTPClient
