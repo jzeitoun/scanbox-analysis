@@ -146,12 +146,7 @@ class stitched_data(object):
                                         end_color='FFFFFF00',
                                         fill_type='solid')
 
-
-
-
         # write column titles
-        headers = ['Cell ID','Anova All|F', 'Anova All|P', 'SF Cutoff Rel33|X', 'SF Cutoff Rel33|Y', 'SF|Peak', 'SF|Pref', 'SF|Bandwidth', 'SF|Global OPref', '@', 'OSI', 'CV', 'DSI', 'Sigma', 'OPref', 'RMax', 'Residual', 'Anova Each|F', 'Anova Each|P']        
-        
         ws['A1'].value = 'Cell ID'
         ws['A1'].style = header
         ws['B1'].value = 'Anova All'
@@ -175,10 +170,6 @@ class stitched_data(object):
             cell.value = val
             cell.style = header
 
-        for row in ws.iter_rows(max_col=len(headers), max_row=1):
-            for cell,title in zip(row,headers):
-                cell.value = title
-            
         for idx,roi in zip(idx_list,self.merged_rois):
             if any([anovaeach.p < .01 for anovaeach in roi.dtanovaeachs]):
                 style = sig_cell
@@ -188,7 +179,7 @@ class stitched_data(object):
             for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)][0],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)][0]):
                 ws.merge_cells('{}{}:{}{}'.format(top.column,top.row,bottom.column,bottom.row))
 
-            ws.cell(row=idx,column=1).value = roi.rois[0].params.cell_id
+            ws.cell(row=idx,column=1).value = int(roi.rois[0].params.cell_id)
             ws.cell(row=idx,column=1).style = style
             ws.cell(row=idx,column=1).alignment = Alignment(vertical='center',horizontal=None)
             ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['p']
