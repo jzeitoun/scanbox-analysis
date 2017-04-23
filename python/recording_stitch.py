@@ -186,9 +186,14 @@ class stitched_data(object):
             ws.cell(row=idx,column=2).style = style
             ws.cell(row=idx,column=3).value = roi.dtanovaalls.first.attributes['value']['f']
             ws.cell(row=idx,column=3).style = style
-            ws.cell(row=idx,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
-            ws.cell(row=idx,column=4).style = style
-            ws.cell(row=idx,column=5).value = roi.dtsfreqfits.first.attributes['value']['rc33'].y
+            try:
+                ws.cell(row=idx,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
+                ws.cell(row=idx,column=5).value = roi.dtsfreqfits.first.attributes['value']['rc33'].y
+            except AttributeError:
+                print 'No value found for "SF Cutoff Rel33."'
+                ws.cell(row=idx,column=4).value = None
+                ws.cell(row=idx,column=5).value = None 
+            ws.cell(row=idx,column=4).style = style   
             ws.cell(row=idx,column=5).style = style
             ws.cell(row=idx,column=6).value = round(roi.dtsfreqfits.first.attributes['value']['peak'],2)
             ws.cell(row=idx,column=6).style = style
