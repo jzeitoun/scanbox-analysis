@@ -75,7 +75,7 @@ class stitched_data(object):
         num_rois = len(self.merged_rois)
         sfreqs = self.condition.attributes['sfrequencies']
         num_sf = len(sfreqs)
-        idx_list = range(2,num_rois*num_sf,num_sf)
+        idx_list = range(3,num_rois*num_sf,num_sf)
         font = 'Courier New'
 
         # format header columns
@@ -119,6 +119,12 @@ class stitched_data(object):
                                      indent=0)
 
         reg_cell.font = Font(name=font,size=10)
+
+        reg_cell.border = Border(top=Side(border_style='medium',
+                                                 color='FF000000'),
+                                             bottom=Side(border_style=None,
+                                                 color='FF000000')
+                                             )
 
         sig_cell = NamedStyle(name='significant')
         sig_cell.alignment = Alignment(horizontal='center',
@@ -232,7 +238,7 @@ class stitched_data(object):
             fname = self.fw_array[0][0][:-3] + '_merged.xlsx'
         else:
             fname = filename + '.xlsx'
-        wb.save(filename)
+        wb.save(fname)
 
     def create_SFTP(self):
         hostname = '128.200.21.98' # glass.bio.uci.edu
