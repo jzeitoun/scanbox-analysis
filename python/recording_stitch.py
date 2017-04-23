@@ -174,7 +174,7 @@ class stitched_data(object):
                 cell.value = title
             
         for idx,roi in zip(idx_list,self.merged_rois):
-            if any([anovaeach.p < .01 for anovaeach in merged_2.dtanovaeachs]):
+            if any([anovaeach.p < .01 for anovaeach in roi.dtanovaeachs]):
                 style = sig_cell
             else:
                 style = reg_cell
