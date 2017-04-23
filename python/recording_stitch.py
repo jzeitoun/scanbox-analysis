@@ -179,7 +179,7 @@ class stitched_data(object):
             else:
                 style = reg_cell
 
-            for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)]):
+            for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)][0],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)][0]):
                 ws.merge_cells('{}{}:{}{}'.format(top.column,top.row,bottom.column,bottom.row))
 
             ws.cell(row=idx,column=1).value = roi.rois[0].params.cell_id
