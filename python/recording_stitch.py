@@ -73,7 +73,7 @@ class stitched_data(object):
         ws = wb.active
        
         num_rois = len(self.merged_rois)
-        sfreqs = self.condition.attributes['sfrequencies']
+        sfreqs = self.condition.sfrequencies #attributes['sfrequencies']
         num_sf = len(sfreqs)
         idx_list = range(3,num_rois*num_sf,num_sf)
         font = 'Courier New'
