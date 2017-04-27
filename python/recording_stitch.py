@@ -172,7 +172,9 @@ class stitched_data(object):
             cell.style = header
 
         for idx,roi in zip(idx_list,self.merged_rois):
-            if any([anovaeach.p < p_value for anovaeach in roi.dtanovaeachs]):
+            #if any([anovaeach.p < p_value for anovaeach in roi.dtanovaeachs]):
+            peak_sf = round(roi.dtsfreqfits.first.attributes['value']['peak'],2) 
+            if roi.first.dtanovaeachs.filter_by(trial_sf=peak_sf).first.p <= p_value
                 style = sig_cell
             else:
                 style = reg_cell
@@ -182,9 +184,9 @@ class stitched_data(object):
 
             ws.cell(row=idx,column=1).value = int(roi.rois[0].params.cell_id)
             ws.cell(row=idx,column=1).style = style
-            ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['p']
+            ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['f']
             ws.cell(row=idx,column=2).style = style
-            ws.cell(row=idx,column=3).value = roi.dtanovaalls.first.attributes['value']['f']
+            ws.cell(row=idx,column=3).value = roi.dtanovaalls.first.attributes['value']['p']
             ws.cell(row=idx,column=3).style = style
             try:
                 ws.cell(row=idx,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
@@ -195,7 +197,7 @@ class stitched_data(object):
                 ws.cell(row=idx,column=5).value = None 
             ws.cell(row=idx,column=4).style = style   
             ws.cell(row=idx,column=5).style = style
-            ws.cell(row=idx,column=6).value = round(roi.dtsfreqfits.first.attributes['value']['peak'],2)
+            ws.cell(row=idx,column=6).value = peak_sf 
             ws.cell(row=idx,column=6).style = style
             ws.cell(row=idx,column=7).value = roi.dtsfreqfits.first.attributes['value']['pref']
             ws.cell(row=idx,column=7).style = style
