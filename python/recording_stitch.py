@@ -173,8 +173,8 @@ class stitched_data(object):
 
         for idx,roi in zip(idx_list,self.merged_rois):
             #if any([anovaeach.p < p_value for anovaeach in roi.dtanovaeachs]):
-            peak_sf = round(roi.dtsfreqfits.first.attributes['value']['peak'],2) 
-            if roi.first.dtanovaeachs.filter_by(trial_sf=peak_sf).first.p <= p_value:
+            peak_sf = round(roi.dtsfreqfits[0].attributes['value']['peak'],2) 
+            if roi.dtanovaeachs.filter_by(trial_sf=peak_sf).first.p <= p_value:
                 style = sig_cell
             else:
                 style = reg_cell
