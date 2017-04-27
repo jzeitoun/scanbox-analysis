@@ -206,10 +206,9 @@ class stitched_data(object):
             ws.cell(row=idx,column=9).value = roi.dtorientationbestprefs.first.attributes['value']  
             ws.cell(row=idx,column=9).style = style
            
-            for row in ws.iter_rows(min_col=10, max_col=10, min_row=idx, max_row=idx+num_sf-1):
-                for cell,sf in zip(row,sfreqs):
-                    cell.value = sf
-                    cell.style = style
+            for i,cell in enumerate(ws.iter_rows(min_col=10, max_col=10, min_row=idx, max_row=idx+num_sf-1)):
+                    cell[0].value = sfreqs[i]
+                    cell[0].style = style
 
             for i,row in enumerate(ws.iter_rows(min_col=11, max_col=19, min_row=idx, max_row=idx+num_sf-1)):
                 row[0].value = roi.dtorientationsfits[i].attributes['value']['osi']    
