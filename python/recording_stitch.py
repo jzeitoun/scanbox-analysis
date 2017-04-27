@@ -107,7 +107,7 @@ class stitched_data(object):
         
         header.border = Border(top=Side(border_style='medium',
                                         color='FF000000'),
-                                    bottom=Side(border_style=None,
+                                    bottom=Side(border_style='medium',
                                         color='FF000000')
                                     )
 
@@ -123,7 +123,7 @@ class stitched_data(object):
 
         reg_cell.border = Border(top=Side(border_style='medium',
                                                  color='FF000000'),
-                                             bottom=Side(border_style=None,
+                                             bottom=Side(border_style='medium',
                                                  color='FF000000')
                                              )
 
@@ -139,7 +139,7 @@ class stitched_data(object):
 
         sig_cell.border = Border(top=Side(border_style='medium',
                                                  color='FF000000'),
-                                             bottom=Side(border_style=None,
+                                             bottom=Side(border_style='medium',
                                                  color='FF000000')
                                              )
 
@@ -174,8 +174,12 @@ class stitched_data(object):
         for idx,roi in zip(idx_list,self.merged_rois):
             #if any([anovaeach.p < p_value for anovaeach in roi.dtanovaeachs]):
             peak_sf = round(roi.dtsfreqfits[0].attributes['value']['peak'],2) 
-            if roi.dtanovaeachs.filter_by(trial_sf=peak_sf).first.p <= p_value:
-                style = sig_cell
+            if peak_sf is not None:
+                if roi.dtanovaeachs.filter_by(trial_sf=peak_sf).first.p <= p_value:
+                    style = sig_cell
+                else:
+                    style = reg_cell
+
             else:
                 style = reg_cell
 
