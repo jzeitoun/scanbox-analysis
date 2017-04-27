@@ -73,7 +73,7 @@ class stitched_data(object):
         ws = wb.active
        
         num_rois = len(self.merged_rois)
-        sfreqs = self.condition.attributes['sfrequencies']
+        sfreqs = self.condition.sfrequencies #attributes['sfrequencies']
         num_sf = len(sfreqs)
         idx_list = range(3,num_rois*num_sf,num_sf)
         font = 'Courier New'
@@ -107,7 +107,7 @@ class stitched_data(object):
         
         header.border = Border(top=Side(border_style='medium',
                                         color='FF000000'),
-                                    bottom=Side(border_style=None,
+                                    bottom=Side(border_style='medium',
                                         color='FF000000')
                                     )
 
@@ -123,7 +123,7 @@ class stitched_data(object):
 
         reg_cell.border = Border(top=Side(border_style='medium',
                                                  color='FF000000'),
-                                             bottom=Side(border_style=None,
+                                             bottom=Side(border_style='medium',
                                                  color='FF000000')
                                              )
 
@@ -139,7 +139,7 @@ class stitched_data(object):
 
         sig_cell.border = Border(top=Side(border_style='medium',
                                                  color='FF000000'),
-                                             bottom=Side(border_style=None,
+                                             bottom=Side(border_style='medium',
                                                  color='FF000000')
                                              )
 
@@ -172,19 +172,24 @@ class stitched_data(object):
             cell.style = header
 
         for idx,roi in zip(idx_list,self.merged_rois):
-            if any([anovaeach.p < p_value for anovaeach in roi.dtanovaeachs]):
-                style = sig_cell
-            else:
-                style = reg_cell
-
+            #if any([anovaeach.p < p_value for anovaeach in roi.dtanovaeachs]):
+            peak_sf = round(roi.dtsfreqfits[0].attributes['value']['peak'],2) 
+            try:
+                if roi.dtanovaeachs.filter_by(trial_sf=peak_sf)[0].p <= p_value:
+                    style = sig_cell
+                else:
+                    style = reg_cell
+            except IndexError:
+                style = reg_cell 
+                
             for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)][0],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)][0]):
                 ws.merge_cells('{}{}:{}{}'.format(top.column,top.row,bottom.column,bottom.row))
 
             ws.cell(row=idx,column=1).value = int(roi.rois[0].params.cell_id)
             ws.cell(row=idx,column=1).style = style
-            ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['p']
+            ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['f']
             ws.cell(row=idx,column=2).style = style
-            ws.cell(row=idx,column=3).value = roi.dtanovaalls.first.attributes['value']['f']
+            ws.cell(row=idx,column=3).value = roi.dtanovaalls.first.attributes['value']['p']
             ws.cell(row=idx,column=3).style = style
             try:
                 ws.cell(row=idx,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
@@ -195,7 +200,7 @@ class stitched_data(object):
                 ws.cell(row=idx,column=5).value = None 
             ws.cell(row=idx,column=4).style = style   
             ws.cell(row=idx,column=5).style = style
-            ws.cell(row=idx,column=6).value = round(roi.dtsfreqfits.first.attributes['value']['peak'],2)
+            ws.cell(row=idx,column=6).value = peak_sf 
             ws.cell(row=idx,column=6).style = style
             ws.cell(row=idx,column=7).value = roi.dtsfreqfits.first.attributes['value']['pref']
             ws.cell(row=idx,column=7).style = style
@@ -204,10 +209,9 @@ class stitched_data(object):
             ws.cell(row=idx,column=9).value = roi.dtorientationbestprefs.first.attributes['value']  
             ws.cell(row=idx,column=9).style = style
            
-            for row in ws.iter_rows(min_col=10, max_col=10, min_row=idx, max_row=idx+num_sf-1):
-                for cell,sf in zip(row,sfreqs):
-                    cell.value = sf
-                    cell.style = style
+            for i,cell in enumerate(ws.iter_rows(min_col=10, max_col=10, min_row=idx, max_row=idx+num_sf-1)):
+                    cell[0].value = sfreqs[i]
+                    cell[0].style = style
 
             for i,row in enumerate(ws.iter_rows(min_col=11, max_col=19, min_row=idx, max_row=idx+num_sf-1)):
                 row[0].value = roi.dtorientationsfits[i].attributes['value']['osi']    
