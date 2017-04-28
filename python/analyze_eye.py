@@ -14,12 +14,14 @@ def analyze_eye(filename,write=0):
     # restricts pupil search to +/- this value from the center
     if 'eye2' in filename:
         bounding_region = 100
-        thresh_val = 75 
+        #thresh_val = 75 
+        thresh_val = 120
         factor = -1
         pixels_per_mm = 195.0/4
     else:
         bounding_region = 80
-        thresh_val = 44
+        #thresh_val = 44
+        thresh_val = 120 
         factor = 1
         pixels_per_mm = 138.0/4
     r_effective = 1.25 # radius of pupil to center of eyeball
@@ -39,16 +41,22 @@ def analyze_eye(filename,write=0):
     y_offset = (eye_data.shape[1] - 2*bounding_region)/2 # y distance between full frame edge and cropped edge
     center = np.array([bounding_region,bounding_region]) # center of cropped data
 
+    # create adaptive histogram equalization params
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+
     circ_score_list = []
     bad_count = 0
 
     if write:
         rgb_eye_data = np.zeros([eye_data.shape[0],eye_data.shape[1],eye_data.shape[2],3],dtype='uint8')
         for i in range(eye_data.shape[0]):
+            # apply adaptive histogram equalization
+            eye_frame_full = clahe.apply(eye_data[i])
             # crop eye data
-            eye_frame = eye_data[i,
+            eye_frame = eye_frame_full[
                 eye_data_center[0]-bounding_region:eye_data_center[0]+bounding_region,
                 eye_data_center[1]-bounding_region:eye_data_center[1]+bounding_region].copy()
+            
             # threshold the image
             ret,thresh = cv2.threshold(eye_frame.copy(),thresh_val,255,cv2.THRESH_BINARY)
             # find contours
@@ -107,7 +115,7 @@ def analyze_eye(filename,write=0):
                 center_contour[:,0][:,1] = center_contour[:,0][:,1] + y_offset 
 
                 # convert eye frame to rgb
-                rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
+                rgb_eye_frame = cv2.cvtColor(eye_frame_full.copy(),cv2.COLOR_GRAY2RGB)
                 
                 # draw pupil contour
                 img = cv2.drawContours(rgb_eye_frame, [center_contour], 0, color, 2)
@@ -136,7 +144,7 @@ def analyze_eye(filename,write=0):
                 rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
                 color = (255,255,255)
                 # convert eye frame to rgb
-                rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
+                rgb_eye_frame = cv2.cvtColor(eye_frame_full.copy(),cv2.COLOR_GRAY2RGB)
                 # draw pupil contour
                 img = cv2.drawContours(rgb_eye_frame, [center_contour], 0, color, 2)
                 # draw pupil centroid
