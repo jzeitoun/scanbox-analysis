@@ -49,7 +49,10 @@ def sbxread(filename):
     
     # Load info
     info = loadmat(filename + '.mat')['info']
-    
+   
+    # fixes issue when using uint16 for memmapping
+    info['sz'] = info['sz'].tolist()
+
     # Defining number of channels/size factor
     if info['channels'] == 1:
         info['nChan'] = 2; factor = 1
