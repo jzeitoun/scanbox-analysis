@@ -132,7 +132,7 @@ def analyze_eye(filename,write=0):
                 raw_pos_trace[i] = raw_pos_trace[i-1]
                 # exclude value from pupil size trace
                 area_trace[i] = np.nan 
-                
+                bad_count += 1
                 rgb_eye_frame = cv2.cvtColor(eye_data[i].copy(),cv2.COLOR_GRAY2RGB)
                 color = (255,255,255)
                 # convert eye frame to rgb
@@ -229,6 +229,7 @@ def analyze_eye(filename,write=0):
                 raw_pos_trace[i,1] = raw_pos_trace[i-1,1]                 
                 # exclude value from pupil size trace
                 area_trace[i] = np.nan 
+                bad_count += 1
 
         print 'Bad Counts:',bad_count
         angular_rotation = np.zeros(centroid_trace.shape) 
