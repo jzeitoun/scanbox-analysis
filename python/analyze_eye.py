@@ -60,7 +60,7 @@ def analyze_eye(filename,write=0):
             # threshold the image
             ret,thresh = cv2.threshold(eye_frame.copy(),thresh_val,255,cv2.THRESH_BINARY)
             # find contours
-            contours,hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+            _,contours,hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
             # find convex hulls
             hulls = [cv2.convexHull(contour) for contour in contours]
             # find areas of hulls
