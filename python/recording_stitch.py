@@ -53,7 +53,7 @@ class stitched_data(object):
             sorted_orientation_traces[k] = [dict(dtorientationsmean.attributes.items()[i] for i in [8,17]) for roi in merged_roi.rois for dtorientationsmean in roi.dtorientationsmeans if roi.workspace.name == k]
 	return sorted_orientation_traces
     	
-    def export_mat(self,p_value=.01,filename=None):
+    def export_mat(self,filename=None,p_value=.01,):
         merged_dict = {}
 	merged_dict['filenames'] = [fw[0][:-3] for fw in self.fw_array]
 	merged_dict['workspaces'] = [workspace.name for workspace in self.workspaces]
