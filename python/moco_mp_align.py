@@ -70,9 +70,9 @@ if __name__ == '__main__':
     # confirm that all frames were aligned
     while True:
         try:
-            q_list.append(q.get(timeout=5))
+            q_list.append(q.get(timeout=20))
         except Empty:
-            end = time.time()-5
+            end = time.time()-20
             break
 
     max_aligned_idx = max(q_list)
