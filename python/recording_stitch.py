@@ -53,7 +53,7 @@ class stitched_data(object):
             sorted_orientation_traces[k] = [dict(dtorientationsmean.attributes.items()[i] for i in [8,17]) for roi in merged_roi.rois for dtorientationsmean in roi.dtorientationsmeans if roi.workspace.name == k]
 	return sorted_orientation_traces
     	
-    def export_mat(self,filename=None,p_value=.01,merge=0):
+    def export_mat(self,filename=None,p_value=.01,unmerge=0):
         merged_dict = {}
 	merged_dict['filenames'] = [fw[0][:-3] for fw in self.fw_array]
 	merged_dict['workspaces'] = [workspace.name for workspace in self.workspaces]
@@ -182,7 +182,7 @@ class stitched_data(object):
             except IndexError:
                 style = reg_cell 
 
-            if merge == 0:    
+            if unmerge == 0:    
                 for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)][0],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)][0]):
                     ws.merge_cells('{}{}:{}{}'.format(top.column,top.row,bottom.column,bottom.row))
                 
@@ -211,7 +211,7 @@ class stitched_data(object):
                 ws.cell(row=idx,column=9).value = roi.dtorientationbestprefs.first.attributes['value']  
                 ws.cell(row=idx,column=9).style = style
 
-            elif merge == 1:
+            elif unmerge == 1:
                 for i in range(num_sf):
                     ws.cell(row=idx+i,column=1).value = int(roi.rois[0].params.cell_id)
                     ws.cell(row=idx+i,column=1).style = style
