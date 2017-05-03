@@ -53,7 +53,7 @@ class stitched_data(object):
             sorted_orientation_traces[k] = [dict(dtorientationsmean.attributes.items()[i] for i in [8,17]) for roi in merged_roi.rois for dtorientationsmean in roi.dtorientationsmeans if roi.workspace.name == k]
 	return sorted_orientation_traces
     	
-    def export_mat(self,filename=None,p_value=.01,):
+    def export_mat(self,filename=None,p_value=.01,merge=0):
         merged_dict = {}
 	merged_dict['filenames'] = [fw[0][:-3] for fw in self.fw_array]
 	merged_dict['workspaces'] = [workspace.name for workspace in self.workspaces]
@@ -181,33 +181,61 @@ class stitched_data(object):
                     style = reg_cell
             except IndexError:
                 style = reg_cell 
-                
-            for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)][0],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)][0]):
-                ws.merge_cells('{}{}:{}{}'.format(top.column,top.row,bottom.column,bottom.row))
 
-            ws.cell(row=idx,column=1).value = int(roi.rois[0].params.cell_id)
-            ws.cell(row=idx,column=1).style = style
-            ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['f']
-            ws.cell(row=idx,column=2).style = style
-            ws.cell(row=idx,column=3).value = roi.dtanovaalls.first.attributes['value']['p']
-            ws.cell(row=idx,column=3).style = style
-            try:
-                ws.cell(row=idx,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
-                ws.cell(row=idx,column=5).value = roi.dtsfreqfits.first.attributes['value']['rc33'].y
-            except AttributeError:
-                print 'No "SF Cutoff Rel33" found for cell ',roi.rois[0].params.cell_id
-                ws.cell(row=idx,column=4).value = None
-                ws.cell(row=idx,column=5).value = None 
-            ws.cell(row=idx,column=4).style = style   
-            ws.cell(row=idx,column=5).style = style
-            ws.cell(row=idx,column=6).value = peak_sf 
-            ws.cell(row=idx,column=6).style = style
-            ws.cell(row=idx,column=7).value = roi.dtsfreqfits.first.attributes['value']['pref']
-            ws.cell(row=idx,column=7).style = style
-            ws.cell(row=idx,column=8).value = roi.dtsfreqfits.first.attributes['value']['ratio']
-            ws.cell(row=idx,column=8).style = style
-            ws.cell(row=idx,column=9).value = roi.dtorientationbestprefs.first.attributes['value']  
-            ws.cell(row=idx,column=9).style = style
+            if merge == 0:    
+                for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)][0],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)][0]):
+                    ws.merge_cells('{}{}:{}{}'.format(top.column,top.row,bottom.column,bottom.row))
+                
+                
+                ws.cell(row=idx,column=1).value = int(roi.rois[0].params.cell_id)
+                ws.cell(row=idx,column=1).style = style
+                ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['f']
+                ws.cell(row=idx,column=2).style = style
+                ws.cell(row=idx,column=3).value = roi.dtanovaalls.first.attributes['value']['p']
+                ws.cell(row=idx,column=3).style = style
+                try:
+                    ws.cell(row=idx,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
+                    ws.cell(row=idx,column=5).value = roi.dtsfreqfits.first.attributes['value']['rc33'].y
+                except AttributeError:
+                    print 'No "SF Cutoff Rel33" found for cell ',roi.rois[0].params.cell_id
+                    ws.cell(row=idx,column=4).value = None
+                    ws.cell(row=idx,column=5).value = None 
+                ws.cell(row=idx,column=4).style = style   
+                ws.cell(row=idx,column=5).style = style
+                ws.cell(row=idx,column=6).value = peak_sf 
+                ws.cell(row=idx,column=6).style = style
+                ws.cell(row=idx,column=7).value = roi.dtsfreqfits.first.attributes['value']['pref']
+                ws.cell(row=idx,column=7).style = style
+                ws.cell(row=idx,column=8).value = roi.dtsfreqfits.first.attributes['value']['ratio']
+                ws.cell(row=idx,column=8).style = style
+                ws.cell(row=idx,column=9).value = roi.dtorientationbestprefs.first.attributes['value']  
+                ws.cell(row=idx,column=9).style = style
+
+            elif merge == 1:
+                for i in range(num_sf):
+                    ws.cell(row=idx+i,column=1).value = int(roi.rois[0].params.cell_id)
+                    ws.cell(row=idx+i,column=1).style = style
+                    ws.cell(row=idx+i,column=2).value = roi.dtanovaalls.first.attributes['value']['f']
+                    ws.cell(row=idx+i,column=2).style = style
+                    ws.cell(row=idx+i,column=3).value = roi.dtanovaalls.first.attributes['value']['p']
+                    ws.cell(row=idx+i,column=3).style = style
+                    try:
+                        ws.cell(row=idx+i,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
+                        ws.cell(row=idx+i,column=5).value = roi.dtsfreqfits.first.attributes['value']['rc33'].y
+                    except AttributeError:
+                        print 'No "SF Cutoff Rel33" found for cell ',roi.rois[0].params.cell_id
+                        ws.cell(row=idx+i,column=4).value = None
+                        ws.cell(row=idx+i,column=5).value = None 
+                    ws.cell(row=idx+i,column=4).style = style   
+                    ws.cell(row=idx+i,column=5).style = style
+                    ws.cell(row=idx+i,column=6).value = peak_sf 
+                    ws.cell(row=idx+i,column=6).style = style
+                    ws.cell(row=idx+i,column=7).value = roi.dtsfreqfits.first.attributes['value']['pref']
+                    ws.cell(row=idx+i,column=7).style = style
+                    ws.cell(row=idx+i,column=8).value = roi.dtsfreqfits.first.attributes['value']['ratio']
+                    ws.cell(row=idx+i,column=8).style = style
+                    ws.cell(row=idx+i,column=9).value = roi.dtorientationbestprefs.first.attributes['value']  
+                    ws.cell(row=idx+i,column=9).style = style
            
             for i,cell in enumerate(ws.iter_rows(min_col=10, max_col=10, min_row=idx, max_row=idx+num_sf-1)):
                     cell[0].value = sfreqs[i]
