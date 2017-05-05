@@ -143,28 +143,41 @@ def find_sf_relationship(df,column,eye):
 
     return data_stats, data
 
-def export_sorted_mat(df,column,eye,filename):                                                                                                                                                                                        
-    if '.mat' in filename:                                                                                                                                                                                                            
-        filename = filename[:-3]                                                                                                                                                                                                      
-    data = []                                                                                                                                                                                                                         
-    for row in df.iterrows():                                                                                                                                                                                                         
-        if row[1]['eye'] == eye:                                                                                                                                                                                                      
-            mouse = row[1]['mouse']                                                                                                                                                                                                   
-            rec = row[1]['recording']                                                                                                                                                                                                 
-            sorted_column = sort_vector(df,column,mouse,rec,fill=True,reverse=True)                                                                                                                                                                
-            stimulus_kwargs = get_val(df,'stimulus_kwargs',mouse,rec)                                                                                                                                                                 
-            if stimulus_kwargs != None:                                                                                                                                                                                               
-                sorted_list = {'name':mouse + '_' + rec, 'data':[{'sf':sf,'orientations':[{'ori':ori,'on_indices':None,'off_indices':None,'on_frame_values':None, 'off_frame_values':None} for ori in stimulus_kwargs['orientations']]} for sf in stimulus_kwargs['sfrequencies']]}
-                for v in sorted_list['data']:                                                                                                                                                                                                 
-                    for k in v['orientations']:                                                                                                                                                                                       
-                        k['off_frame_values'] = [c['off_frame_values'] for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']]                                                                                            
+def export_sorted_mat(df,column,eye,filename):
+    if '.mat' in filename:
+        filename = filename[:-3]
+    
+    data = []
+    for row in df.iterrows():
+        if row[1]['eye'] == eye:
+            mouse = row[1]['mouse'] 
+            rec = row[1]['recording']
+            sorted_column = sort_vector(df,column,mouse,rec,fill=True,reverse=True) 
+            stimulus_kwargs = get_val(df,'stimulus_kwargs',mouse,rec)
+            
+            if stimulus_kwargs != None: 
+                sorted_list = {'name':mouse + '_' + rec, 'data':[
+                    {'sf':sf,'orientations':[
+                        {'ori':ori,
+                         'on_indices':None,
+                         'off_indices':None,
+                         'on_frame_values':None, 
+                         'off_frame_values':None} 
+                        for ori in stimulus_kwargs['orientations']
+                        ]} 
+                    for sf in stimulus_kwargs['sfrequencies']
+                    ]}
+                
+                for v in sorted_list['data']:
+                    for k in v['orientations']: 
+                        k['off_frame_values'] = [c['off_frame_values'] for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']]
                         k['off_indices'] = ['{}:{}'.format(c['off_start_frame'],c['off_end_frame']) for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']] 
 
-                for v in sorted_list['data']:                                                                                                                                                                                                 
-                    for k in v['orientations']:                                                                                                                                                                                       
-                        k['on_frame_values'] = [c['on_frame_values'] for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']]                                                                                              
+                for v in sorted_list['data']:
+                    for k in v['orientations']: 
+                        k['on_frame_values'] = [c['on_frame_values'] for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']] 
                         k['on_indices'] = ['{}:{}'.format(c['on_start_frame'],c['on_end_frame']) for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']] 
-                                                                                                                                                                                                                                      
-                data.append(sorted_list)                                                                                                                                                                                              
-                                                                                                                                                                                                                                      
+                
+                data.append(sorted_list)
+                
     sio.savemat(filename + '_' + column + '.mat',{'dataset':data})                                                                                                                                                                                        
