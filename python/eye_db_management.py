@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import scipy.io as sio
 import os
 
 def insert_all_data(df):
@@ -66,10 +67,17 @@ def get_val(df,column,mouse,rec):
     series = df[(df['mouse'] == mouse) & (df['recording'] == rec)]
     return series[column][series.index[0]]
 
-def sort_vector(df_,column,mouse,rec):                                                                                            
+def sort_vector(df_,column,mouse,rec,fill=False,reverse=False):                                                                                            
+    ''' 
+    - "fill" determines whether to forward fill NaN values
+    - "reverse" determines whether to sort the prior or post off period
+    '''
     conditions = get_val(df_,'conditions',mouse,rec)
     if conditions != None:
         vector = get_val(df_,column,mouse,rec)
+        # forward fill NaN values
+        if fill == True:
+            vector = pd.DataFrame(vector).fillna(method='ffill').as_matrix()
         stimulus_kwargs = get_val(df_,'stimulus_kwargs',mouse,rec)
         framerate = stimulus_kwargs['framerate']
         num_on_frames = int(framerate * stimulus_kwargs['on_duration'])                                                               
@@ -81,11 +89,14 @@ def sort_vector(df_,column,mouse,rec):
         off_times = np.array([c['off_time'] for c in conditions])                                                               
                                                                                                                                 
         on_frames = np.int64(on_times * framerate)                                                                               
-        off_frames = np.int64(off_times * framerate)                                                                             
-                                                                                                                                
+        off_frames = np.int64(off_times * framerate)         
+        
         on_idx = zip(on_frames,on_frames + num_on_frames)                                                                       
         off_idx = zip(off_frames,off_frames + num_off_frames)
-                                                                                                                                
+        
+        if reverse == True:
+            off_idx = np.roll(off_idx,(1,1))
+
         for c,d1,d2 in zip(conditions,on_idx,off_idx):                                                                          
             c.update(                                                                                                           
                 {'on_start_frame':d1[0],'on_end_frame':d1[1],                                                                   
@@ -131,3 +142,29 @@ def find_sf_relationship(df,column,eye):
         data_stats.append(stats)
 
     return data_stats, data
+
+def export_sorted_mat(df,column,eye,filename):                                                                                                                                                                                        
+    if '.mat' in filename:                                                                                                                                                                                                            
+        filename = filename[:-3]                                                                                                                                                                                                      
+    data = []                                                                                                                                                                                                                         
+    for row in df.iterrows():                                                                                                                                                                                                         
+        if row[1]['eye'] == eye:                                                                                                                                                                                                      
+            mouse = row[1]['mouse']                                                                                                                                                                                                   
+            rec = row[1]['recording']                                                                                                                                                                                                 
+            sorted_column = sort_vector(df,column,mouse,rec,fill=True,reverse=True)                                                                                                                                                                
+            stimulus_kwargs = get_val(df,'stimulus_kwargs',mouse,rec)                                                                                                                                                                 
+            if stimulus_kwargs != None:                                                                                                                                                                                               
+                sorted_list = {'name':mouse + '_' + rec, 'data':[{'sf':sf,'orientations':[{'ori':ori,'on_indices':None,'off_indices':None,'on_frame_values':None, 'off_frame_values':None} for ori in stimulus_kwargs['orientations']]} for sf in stimulus_kwargs['sfrequencies']]}
+                for v in sorted_list['data']:                                                                                                                                                                                                 
+                    for k in v['orientations']:                                                                                                                                                                                       
+                        k['off_frame_values'] = [c['off_frame_values'] for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']]                                                                                            
+                        k['off_indices'] = ['{}:{}'.format(c['off_start_frame'],c['off_end_frame']) for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']] 
+
+                for v in sorted_list['data']:                                                                                                                                                                                                 
+                    for k in v['orientations']:                                                                                                                                                                                       
+                        k['on_frame_values'] = [c['on_frame_values'] for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']]                                                                                              
+                        k['on_indices'] = ['{}:{}'.format(c['on_start_frame'],c['on_end_frame']) for c in sorted_column if c['sf'] == v['sf'] and c['ori'] == k['ori']] 
+                                                                                                                                                                                                                                      
+                data.append(sorted_list)                                                                                                                                                                                              
+                                                                                                                                                                                                                                      
+    sio.savemat(filename + '_' + column + '.mat',{'dataset':data})                                                                                                                                                                                        
