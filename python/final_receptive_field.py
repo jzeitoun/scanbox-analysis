@@ -15,15 +15,15 @@ def sub2ind(array_shape, rows, cols):
 def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2):
     if '.io' in io_file:
         io_file = io_file[:-3]
-    os.mkdir(io_file + '-analysis')
-    dir_path = os.path.abspath(io_file + '-analysis')
     path = os.getcwd()                                                     
     io = ScanboxIO(os.path.join(path,io_file + '.io'))
     workspace = [w for w in io.condition.workspaces if w.name == _workspace][0]
     rois = [roi for roi in workspace.rois]
+    os.mkdir(io_file + '-analysis')
+    dir_path = os.path.abspath(io_file + '-analysis')
     framerate = io.condition.framerate
-    trailing_frames = np.int64(trailing_seconds * framerate)
-    num_on_frames = rois[0].dtorientationsmeans.first.on_frames
+    trailing_frames = int(trailing_seconds * framerate)
+    num_on_frames = int(io.condition.on_duration * framerate)
 
     for roi in rois:
         dtoverallmeans = roi.dtoverallmean.value
