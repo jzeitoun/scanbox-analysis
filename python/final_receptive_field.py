@@ -7,15 +7,20 @@ import os
 from scipy.ndimage.filters import gaussian_filter
 
 from pacu.core.io.scanbox.impl2 import ScanboxIO
+from pacu.core.io.scanbox.impl2 import ExperimentV1
 
 def sub2ind(array_shape, rows, cols):
     '''Converts xy coordinates to linear'''
     return (rows*array_shape[1]) + cols + 1
   
-def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2):
+def get_receptive_field(io_file,_workspace,trailing_seconds=2):
     if '.io' in io_file:
         io_file = io_file[:-3]
+    name = io_file.split('_')
+    basename = [word for word in name if 'Aligned' not in word and 'Moco' not in word]
+    basename = '_'.join(basename)
     path = os.getcwd()                                                     
+    ex = ExperimentV1()
     io = ScanboxIO(os.path.join(path,io_file + '.io'))
     workspace = [w for w in io.condition.workspaces if w.name == _workspace][0]
     rois = [roi for roi in workspace.rois]
@@ -24,24 +29,30 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
     framerate = io.condition.framerate
     trailing_frames = int(trailing_seconds * framerate)
     num_on_frames = int(io.condition.on_duration * framerate)
+    num_off_frames = int(io.condition.off_duration * framerate)
+    baseline_select = num_off_frames/2
 
     for roi in rois:
-        dtoverallmeans = roi.dtoverallmean.value
-        conditions = [dict(t.attributes) for t in io.condition.trials]
-        for c in conditions:
-            c.update(io.condition.trial_list[c['sequence']])
+        dtoverallmean = roi.dtoverallmean.value
+        c_id = ex.find_keyword(basename)
+        # extract conditions from db
+        conditions = ex.get_by_id(c_id).ordered_trials
+        #conditions = [dict(t.attributes) for t in io.condition.trials]
+        #for c in conditions:
+        #    c.update(io.condition.trial_list[c['sequence']])
         sq_size = max([c['y'] for c in conditions]) + 1
         num_positions = range(1,sq_size**2+1)
     
-        on_time = np.array([d['on_time'] for d in conditions])
-        off_time = np.array([d['off_time'] for d in conditions])
+        on_times = np.array([c['on_time'] for c in conditions])
+        off_times = np.array([c['off_time'] for c in conditions])
         
-        on_frame = np.int64(on_time * framerate)
-        off_frame = np.int64(off_time * framerate)
+        on_frames = np.int64(on_times * framerate)
+        off_frames = np.int64(off_times * framerate)
         
-        on_idx = zip(on_frame,on_frame+trailing_frames)
-        off_idx = zip(off_frame,np.append(on_frame[1:],on_frame[-1] + min(np.diff(on_frame))))
-        
+        on_idx = zip(on_frames,on_frames+trailing_frames)
+        #off_idx = zip(off_frames,np.append(on_frames[1:],on_frame[-1] + min(np.diff(on_frame))))
+        off_idx = zip(off_frames,off_frames + num_off_frames)
+
         for c,d1,d2 in zip(conditions,on_idx,off_idx):
             linear_position = sub2ind([sq_size,sq_size],(sq_size - 1 - c['y']),c['x'])
             c.update(
@@ -51,17 +62,17 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
                 )
           
         # remove trials if not enough frames  
-        if len(dtoverallmeans) < conditions[-1]['on_end_frame']:
-            max_idx = min([conditions.index(c) for c in conditions if c['on_end_frame'] > len(dtoverallmeans)])
+        if len(dtoverallmean) < conditions[-1]['on_end_frame']:
+            max_idx = min([conditions.index(c) for c in conditions if c['on_end_frame'] > len(dtoverallmean)])
             conditions = conditions[:max_idx]
         
         # sort frames
         for c in conditions:
             c.update(
                 {'on_frame_values':
-                    dtoverallmeans[c['on_start_frame']:c['on_end_frame']],
+                    dtoverallmean[c['on_start_frame']:c['on_end_frame']],
                 'off_frame_values':
-                    dtoverallmeans[c['off_start_frame']:c['off_end_frame']]}
+                    dtoverallmean[c['off_start_frame']:c['off_end_frame']]}
                 )
         
         # calculate df/f    
