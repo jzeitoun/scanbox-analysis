@@ -13,7 +13,7 @@ def sub2ind(array_shape, rows, cols):
     '''Converts xy coordinates to linear'''
     return (rows*array_shape[1]) + cols + 1
   
-def get_receptive_field(io_file,_workspace,trailing_seconds=2):
+def get_receptive_field(io_file,_workspace, pixel_duration=None, trailing_seconds=2):
     if '.io' in io_file:
         io_file = io_file[:-3]
     name = io_file.split('_')
@@ -31,6 +31,11 @@ def get_receptive_field(io_file,_workspace,trailing_seconds=2):
     num_on_frames = int(io.condition.on_duration * framerate)
     num_off_frames = int(io.condition.off_duration * framerate)
     baseline_select = num_on_frames
+    
+    if pixel_duration == None:
+        pixel_duration = num_on_frames
+    else:
+        pixel_duration = int(pixel_duration * framerate)
 
     for roi in rois:
         dtoverallmean = roi.dtoverallmean.value
@@ -101,8 +106,8 @@ def get_receptive_field(io_file,_workspace,trailing_seconds=2):
         #black_pixel_map = np.array([np.max(k['mean_trace'][:num_on_frames]) for k in black_mean_traces]).reshape([sq_size,sq_size])
 
         # uncomment to use sum instead of max
-        white_pixel_map = np.array([np.sum(k['mean_trace'][:num_on_frames]) for k in white_mean_traces]).reshape([sq_size,sq_size])
-        black_pixel_map = np.array([np.sum(k['mean_trace'][:num_on_frames]) for k in black_mean_traces]).reshape([sq_size,sq_size])
+        white_pixel_map = np.array([np.sum(k['mean_trace'][:pixel_duration]) for k in white_mean_traces]).reshape([sq_size,sq_size])
+        black_pixel_map = np.array([np.sum(k['mean_trace'][:pixel_duration]) for k in black_mean_traces]).reshape([sq_size,sq_size])
 
         # calculate z-score map
         white_z_score_map = (white_pixel_map - np.mean(white_pixel_map)) / np.std(white_pixel_map)
