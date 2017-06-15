@@ -1,10 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
+
 from matplotlib import gridspec
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 def replot(cell_id):
     data = np.load(cell_id + '_analysis.npy').tolist()
     sq_size = data['sq_size']
+    title_size = 12
     
     # calculate y limits
     y_max = np.max([max(np.concatenate([w['on_df/f'] for w in data['white_traces']])),max(np.concatenate([b['on_df/f'] for b in data['black_traces']]))])
@@ -57,26 +60,36 @@ def replot(cell_id):
         plt.subplot(gs03[m['linear_position']-1])
         plt.plot(m['mean_trace'],linewidth=.5,c='blue') 
     
-    # display on and off pixel maps
-    #plt.figure('\'White\' Response Pixel Map')
-    plt.subplot(gs01[:,:]) 
-    plt.imshow(data['white_pixel_map'],interpolation='none',cmap='Reds')
-    plt.title('White Raw Pixel Map')
-    plt.subplot(gs02[:,:])
-    plt.imshow(data['filtered_white_z_score_map'],interpolation='none',cmap='Reds')
-    plt.title('White Z-Score Pixel Map')
-    #plt.clim(colorscale_min,colorscale_max) # uncomment to select colorscale limits
-    plt.colorbar()
-    #plt.figure('\'Black\' Response Pixel Map')
-    plt.subplot(gs04[:,:]) 
-    plt.imshow(data['black_pixel_map'],interpolation='none',cmap='Blues')
-    plt.title('Black Raw Pixel Map')
-    plt.subplot(gs05[:,:]) 
-    plt.imshow(data['filtered_black_z_score_map'],interpolation='none',cmap='Blues')
-    plt.title('Black Z-Score Pixel Map')
-    #plt.clim(colorscale_min,colorscale_max) # uncomment to select colorscale limits
-    plt.colorbar()
-    gs0.tight_layout(fig,pad=0.5)
+    # White Responses
+    ax1 = plt.subplot(gs01[:,:]) 
+    im1 = plt.imshow(data['white_pixel_map'],interpolation='none',cmap='Reds')
+    plt.title('White Raw Pixel Map', size=title_size)
+    divider1 = make_axes_locatable(ax1)
+    cax1 = divider1.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im1, cax=cax1)
+    plt.clim(colorscale_min,colorscale_max)
+    ax2 = plt.subplot(gs02[:,:])
+    im2 = plt.imshow(data['filtered_white_z_score_map'],interpolation='none',cmap='Reds')
+    plt.title('White Z-Score Pixel Map', size=title_size)
+    divider2 = make_axes_locatable(ax2)
+    cax2 = divider2.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im2, cax=cax2)
+    # Black Responses
+    ax4 = plt.subplot(gs04[:,:]) 
+    im4 = plt.imshow(data['black_pixel_map'],interpolation='none',cmap='Blues')
+    plt.title('Black Raw Pixel Map', size=title_size)
+    divider4 = make_axes_locatable(ax4)
+    cax4 = divider4.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im4, cax=cax4)
+    plt.clim(colorscale_min,colorscale_max)
+    ax5 = plt.subplot(gs05[:,:]) 
+    im5 = plt.imshow(data['filtered_black_z_score_map'],interpolation='none',cmap='Blues')
+    plt.title('Black Z-Score Pixel Map', size=title_size)
+    divider5 = make_axes_locatable(ax5)
+    cax5 = divider5.append_axes("right", size="5%", pad=0.05)
+    plt.colorbar(im5, cax=cax5)
+    
+    gs0.tight_layout(fig, pad=0.05)
 
 def export_svg(fig_num=0):
     if fig_num:

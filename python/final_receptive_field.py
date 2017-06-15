@@ -7,66 +7,80 @@ import os
 from scipy.ndimage.filters import gaussian_filter
 
 from pacu.core.io.scanbox.impl2 import ScanboxIO
+from pacu.core.io.scanbox.impl2 import ExperimentV1
 
 def sub2ind(array_shape, rows, cols):
     '''Converts xy coordinates to linear'''
     return (rows*array_shape[1]) + cols + 1
   
-def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2):
+def get_receptive_field(io_file,_workspace, pixel_duration=None, trailing_seconds=2):
     if '.io' in io_file:
         io_file = io_file[:-3]
-    os.mkdir(io_file + '-analysis')
-    dir_path = os.path.abspath(io_file + '-analysis')
+    name = io_file.split('_')
+    basename = [word for word in name if 'Aligned' not in word and 'Moco' not in word]
+    basename = '_'.join(basename)
     path = os.getcwd()                                                     
+    ex = ExperimentV1()
     io = ScanboxIO(os.path.join(path,io_file + '.io'))
     workspace = [w for w in io.condition.workspaces if w.name == _workspace][0]
     rois = [roi for roi in workspace.rois]
+    os.mkdir(io_file + '-analysis')
+    dir_path = os.path.abspath(io_file + '-analysis')
     framerate = io.condition.framerate
-    trailing_frames = np.int64(trailing_seconds * framerate)
-    num_on_frames = rois[0].dtorientationsmeans.first.on_frames
+    trailing_frames = int(trailing_seconds * framerate)
+    num_on_frames = int(io.condition.on_duration * framerate)
+    num_off_frames = int(io.condition.off_duration * framerate)
+    baseline_select = num_on_frames
+    
+    if pixel_duration == None:
+        pixel_duration = num_on_frames
+    else:
+        pixel_duration = int(pixel_duration * framerate)
 
     for roi in rois:
-        dtoverallmeans = roi.dtoverallmean.value
-        conditions = [dict(t.attributes) for t in io.condition.trials]
-        for c in conditions:
-            c.update(io.condition.trial_list[c['sequence']])
+        dtoverallmean = roi.dtoverallmean.value
+        c_id = ex.find_keyword(basename)[0][0]
+        # extract conditions from db
+        conditions = ex.get_by_id(c_id).ordered_trials
         sq_size = max([c['y'] for c in conditions]) + 1
         num_positions = range(1,sq_size**2+1)
     
-        on_time = np.array([d['on_time'] for d in conditions])
-        off_time = np.array([d['off_time'] for d in conditions])
+        on_times = np.array([c['on_time'] for c in conditions])
+        #off_times = np.array([c['off_time'] for c in conditions])
         
-        on_frame = np.int64(on_time * framerate)
-        off_frame = np.int64(off_time * framerate)
+        on_frames = np.int64(on_times * framerate)
+        #off_frames = np.int64(off_times * framerate)
         
-        on_idx = zip(on_frame,on_frame+trailing_frames)
-        off_idx = zip(off_frame,np.append(on_frame[1:],on_frame[-1] + min(np.diff(on_frame))))
-        
-        for c,d1,d2 in zip(conditions,on_idx,off_idx):
+        on_idx = zip(on_frames,on_frames+trailing_frames)
+        #off_idx = zip(off_frames,np.append(on_frames[1:],on_frame[-1] + min(np.diff(on_frame))))
+        baseline_idx = zip(on_frames - baseline_select, on_frames)
+        baseline_idx[0] = (baseline_idx[0][0],None)
+
+        for c,d1,d2 in zip(conditions,on_idx,baseline_idx):
             linear_position = sub2ind([sq_size,sq_size],(sq_size - 1 - c['y']),c['x'])
             c.update(
                 {'on_start_frame':d1[0],'on_end_frame':d1[1],
-                'off_start_frame':d2[0],'off_end_frame':d2[1],
+                'baseline_start_frame':d2[0],'baseline_end_frame':d2[1],
                 'linear_position':linear_position}
                 )
           
         # remove trials if not enough frames  
-        if len(dtoverallmeans) < conditions[-1]['on_end_frame']:
-            max_idx = min([conditions.index(c) for c in conditions if c['on_end_frame'] > len(dtoverallmeans)])
+        if len(dtoverallmean) < conditions[-1]['on_end_frame']:
+            max_idx = min([conditions.index(c) for c in conditions if c['on_end_frame'] > len(dtoverallmean)])
             conditions = conditions[:max_idx]
         
         # sort frames
         for c in conditions:
             c.update(
                 {'on_frame_values':
-                    dtoverallmeans[c['on_start_frame']:c['on_end_frame']],
-                'off_frame_values':
-                    dtoverallmeans[c['off_start_frame']:c['off_end_frame']]}
+                    dtoverallmean[c['on_start_frame']:c['on_end_frame']],
+                'baseline_frame_values':
+                    dtoverallmean[c['baseline_start_frame']:c['baseline_end_frame']]}
                 )
         
         # calculate df/f    
-        baseline = np.array([np.mean(c['off_frame_values'][-baseline_select:]) for c in conditions])    
-        baseline = np.roll(baseline,1)
+        baseline = np.array([np.mean(c['baseline_frame_values']) for c in conditions])    
+        #baseline = np.roll(baseline,1)
         
         for c,b in zip(conditions,baseline):
             c.update(
@@ -77,7 +91,7 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
         # calculate mean traces, segregated by color value
         white_traces = [c for c in conditions if c['v'] == 1]
         black_traces = [c for c in conditions if c['v'] == -1]    
-        
+
         white_mean_traces = [dict(linear_position=r,v=1,mean_trace=np.array([])) for r in range(1,sq_size**2+1)]
         black_mean_traces = [dict(linear_position=r,v=1,mean_trace=np.array([])) for r in range(1,sq_size**2+1)]
         
@@ -92,8 +106,8 @@ def get_receptive_field(io_file,_workspace,baseline_select=7,trailing_seconds=2)
         #black_pixel_map = np.array([np.max(k['mean_trace'][:num_on_frames]) for k in black_mean_traces]).reshape([sq_size,sq_size])
 
         # uncomment to use sum instead of max
-        white_pixel_map = np.array([np.sum(k['mean_trace'][:num_on_frames]) for k in white_mean_traces]).reshape([sq_size,sq_size])
-        black_pixel_map = np.array([np.sum(k['mean_trace'][:num_on_frames]) for k in black_mean_traces]).reshape([sq_size,sq_size])
+        white_pixel_map = np.array([np.sum(k['mean_trace'][:pixel_duration]) for k in white_mean_traces]).reshape([sq_size,sq_size])
+        black_pixel_map = np.array([np.sum(k['mean_trace'][:pixel_duration]) for k in black_mean_traces]).reshape([sq_size,sq_size])
 
         # calculate z-score map
         white_z_score_map = (white_pixel_map - np.mean(white_pixel_map)) / np.std(white_pixel_map)
