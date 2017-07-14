@@ -1,8 +1,8 @@
 import os
 import numpy as np
 import scipy.io as spio
+import tifffile as tif
 
- 
 def loadmat(filename):
     '''
     this function should be called instead of direct spio.loadmat

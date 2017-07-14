@@ -70,9 +70,9 @@ def align_purepy(filename, idx_range, template, ds_template, length, height, map
     
     for idx in idx_range:
         moving = mapped_data[idx]
-	# need to crop left margin if data is bidirectional
-	if scanmode == 0:
-	    moving = moving[:,100:]
+        # need to crop left margin if data is bidirectional
+        if scanmode == 0:
+            moving = moving[:,100:]
         ds_moving = cv2.pyrDown(moving)
         rows = ds_moving.shape[0]
         cols = ds_moving.shape[1]
