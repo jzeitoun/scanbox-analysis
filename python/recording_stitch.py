@@ -19,7 +19,7 @@ class stitched_data(object):
     '''
     def __init__(self,fw_array):
         self.fw_array = fw_array
-	self.path = os.getcwd()
+        self.path = os.getcwd()
         self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in self.fw_array]
         self.condition = self.io[0].condition
         self.workspaces = [workspace for data,fw in zip(self.io, self.fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
@@ -27,9 +27,9 @@ class stitched_data(object):
         #self.merged_rois = [TrialMergedROIView(roi.id,*self.workspaces) for roi in self.rois[0]]
         self.merged_rois = [TrialMergedROIView(roi.params.cell_id,*self.workspaces) for roi in self.rois[0]]
         self.refresh_all()
-	#self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
+        #self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
         self.roi_dict = {'{}{}'.format('cell_id_',merged_roi.rois[0].params.cell_id):merged_roi.serialize() for merged_roi in self.merged_rois}
-	#self.sftp = self.create_SFTP()
+        #self.sftp = self.create_SFTP()
     
     def find_matched_rois(self):
         rois = [workspace.rois for data, fw in zip(self.io, self.fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
@@ -45,22 +45,29 @@ class stitched_data(object):
 
     def refresh_all(self):
         for merged_roi in self.merged_rois:
-	    merged_roi.refresh()
+            merged_roi.refresh()
 
     def sorted_orientation_traces(self, merged_roi):
         sorted_orientation_traces = {str(roi.workspace.name):{} for roi in merged_roi.rois}
         for k in sorted_orientation_traces.keys():
             sorted_orientation_traces[k] = [dict(dtorientationsmean.attributes.items()[i] for i in [8,17]) for roi in merged_roi.rois for dtorientationsmean in roi.dtorientationsmeans if roi.workspace.name == k]
-	return sorted_orientation_traces
-    	
+        return sorted_orientation_traces
+
+    def blank_responses(self, merged_roi):
+        blank_responses = [trial.attributes['value']['on']
+                            for trial in merged_roi.dff0s
+                            if trial.attributes['trial_blank'] == True]
+        return np.mean(blank_responses, 1)
+
     def export_mat(self,filename=None,p_value=.01,unmerge=0):
         merged_dict = {}
-	merged_dict['filenames'] = [fw[0][:-3] for fw in self.fw_array]
-	merged_dict['workspaces'] = [workspace.name for workspace in self.workspaces]
-	merged_dict['rois'] = self.roi_dict
-	for merged_roi in self.merged_rois:
-	   #merged_dict['rois']['{}{}'.format('id_',merged_roi.rois[0].id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
+        merged_dict['filenames'] = [fw[0][:-3] for fw in self.fw_array]
+        merged_dict['workspaces'] = [workspace.name for workspace in self.workspaces]
+        merged_dict['rois'] = self.roi_dict
+        for merged_roi in self.merged_rois:
+           #merged_dict['rois']['{}{}'.format('id_',merged_roi.rois[0].id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
             merged_dict['rois']['{}{}'.format('cell_id_',merged_roi.rois[0].params.cell_id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
+            merged_dict['rois']['{}{}'.format('cell_id_',merged_roi.rois[0].params.cell_id)]['blank_responses'] = self.blank_responses(merged_roi)
         if filename == None:
             fname = self.fw_array[0][0][:-3] + '_merged.mat'
         else:
@@ -170,11 +177,10 @@ class stitched_data(object):
         ws['T2'].value = 'P'
         ws['T2'].style = header
 
-
         for cell,val in zip(ws[2][1:9],['F','P','X','Y','Peak','Pref','Bandwidth','Global\nOPref']):
             cell.value = val
             cell.style = header
-            
+
         for cell,val in zip(ws[1][9:18],['@', 'OSI', 'CV', 'DCV', 'DSI', 'Sigma', 'OPref', 'RMax', 'Residual']):
         #for cell,val in zip(ws[1][9:17],['@', 'OSI', 'CV', 'DSI', 'Sigma', 'OPref', 'RMax', 'Residual']):
             cell.value = val
@@ -194,8 +200,7 @@ class stitched_data(object):
             if unmerge == 0:
                 for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)][0],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)][0]):
                     ws.merge_cells('{}{}:{}{}'.format(top.column,top.row,bottom.column,bottom.row))
-                
-                
+
                 ws.cell(row=idx,column=1).value = int(roi.rois[0].params.cell_id)
                 ws.cell(row=idx,column=1).style = style
                 ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['f']
@@ -245,26 +250,34 @@ class stitched_data(object):
                     ws.cell(row=idx+i,column=8).style = style
                     ws.cell(row=idx+i,column=9).value = roi.dtorientationbestprefs.first.attributes['value']
                     ws.cell(row=idx+i,column=9).style = style
-           
+
             for i,cell in enumerate(ws.iter_rows(min_col=10, max_col=10, min_row=idx, max_row=idx+num_sf-1)):
                     cell[0].value = sfreqs[i]
                     cell[0].style = style
-            
-            xoris = [v for v in workspace.rois.first.dtorientationsmeans.first.attributes['indices'].values()]
-            xoris.sort()
 
-            indices = [k for k in workspace.rois.first.dtorientationsmeans.first.attributes['indices'].keys()]
-            indices.sort()
-            ymeas = np.array(workspace.rois.first.dtorientationsmeans.first.attributes['meantrace'])[indices]
+            for i,row in enumerate(ws.iter_rows(min_col=11, max_col=20, min_row=idx, max_row=idx+num_sf-1)):
+            #for i,row in enumerate(ws.iter_rows(min_col=11, max_col=19, min_row=idx, max_row=idx+num_sf-1)):
 
-            sqrt, sin, cos, sum = np.sqrt, np.sin, np.cos, np.sum
-            thetas = (np.array(xoris)/360)*2*np.pi
-            R_thetas = np.array(ymeas)
-            dcv = sqrt(
-                    sum((R_thetas * sin(thetas)))**2 + sum((R_thetas * cos(thetas)))**2
+                # calculcate DCV
+                xoris = [v for v in roi.dtorientationsmeans[i].attributes['indices'].values()]
+                xoris.sort()
+
+                y_stretched = np.array(roi.dtorientationsfits[i].attributes['value']['y_meas'])
+                ymeas = y_stretched[np.int64(xoris)]
+
+                sqrt, sin, cos, sum = np.sqrt, np.sin, np.cos, np.sum
+                thetas = (np.array(xoris)/360)*2*np.pi
+                two_thetas = 2 * (np.array(xoris)/360)*2*np.pi
+                R_thetas = np.array(ymeas)
+
+                dcv = sqrt(
+                        sum((R_thetas * sin(thetas)))**2 + sum((R_thetas * cos(thetas)))**2
                                 ) / sum(R_thetas)
 
-            for i,row in enumerate(ws.iter_rows(min_col=11, max_col=19, min_row=idx, max_row=idx+num_sf-1)):
+                cv = sqrt(
+                        sum((R_thetas * sin(two_thetas)))**2 + sum((R_thetas * cos(two_thetas)))**2
+                                ) / sum(R_thetas)
+
                 row[0].value = roi.dtorientationsfits[i].attributes['value']['osi']
                 row[0].style = style
                 row[1].value = roi.dtorientationsfits[i].attributes['value']['cv']
