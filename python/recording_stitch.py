@@ -258,31 +258,11 @@ class stitched_data(object):
             for i,row in enumerate(ws.iter_rows(min_col=11, max_col=20, min_row=idx, max_row=idx+num_sf-1)):
             #for i,row in enumerate(ws.iter_rows(min_col=11, max_col=19, min_row=idx, max_row=idx+num_sf-1)):
 
-                # calculcate DCV
-                xoris = [v for v in roi.dtorientationsmeans[i].attributes['indices'].values()]
-                xoris.sort()
-
-                y_stretched = np.array(roi.dtorientationsfits[i].attributes['value']['y_meas'])
-                ymeas = y_stretched[np.int64(xoris)]
-
-                sqrt, sin, cos, sum = np.sqrt, np.sin, np.cos, np.sum
-                thetas = (np.array(xoris)/360)*2*np.pi
-                two_thetas = 2 * (np.array(xoris)/360)*2*np.pi
-                R_thetas = np.array(ymeas)
-
-                dcv = sqrt(
-                        sum((R_thetas * sin(thetas)))**2 + sum((R_thetas * cos(thetas)))**2
-                                ) / sum(R_thetas)
-
-                cv = sqrt(
-                        sum((R_thetas * sin(two_thetas)))**2 + sum((R_thetas * cos(two_thetas)))**2
-                                ) / sum(R_thetas)
-
                 row[0].value = roi.dtorientationsfits[i].attributes['value']['osi']
                 row[0].style = style
                 row[1].value = roi.dtorientationsfits[i].attributes['value']['cv']
                 row[1].style = style
-                row[2].value = dcv
+                row[2].value = roi.dtorientationsfits[i].attributes['value']['dcv']
                 row[2].style = style
                 #row[2].value = roi.dtorientationsfits[i].attributes['value']['dsi']
                 #row[2].style = style
