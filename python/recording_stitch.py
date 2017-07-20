@@ -59,6 +59,12 @@ class stitched_data(object):
                             if trial.attributes['trial_blank'] == True]
         return np.mean(blank_responses, 1)
 
+    def flicker_responses(self, merged_roi):
+        flicker_responses = [trial.attributes['value']['on']
+                            for trial in merged_roi.dff0s
+                            if trial.attributes['trial_flicker'] == True]
+        return np.mean(flicker_responses, 1)
+
     def export_mat(self,filename=None,p_value=.01,unmerge=0):
         merged_dict = {}
         merged_dict['filenames'] = [fw[0][:-3] for fw in self.fw_array]
@@ -68,6 +74,7 @@ class stitched_data(object):
            #merged_dict['rois']['{}{}'.format('id_',merged_roi.rois[0].id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
             merged_dict['rois']['{}{}'.format('cell_id_',merged_roi.rois[0].params.cell_id)]['sorted_dtorientationsmeans'] = self.sorted_orientation_traces(merged_roi)
             merged_dict['rois']['{}{}'.format('cell_id_',merged_roi.rois[0].params.cell_id)]['blank_responses'] = self.blank_responses(merged_roi)
+            merged_dict['rois']['{}{}'.format('cell_id_',merged_roi.rois[0].params.cell_id)]['flicker_responses'] = self.flicker_responses(merged_roi)
         if filename == None:
             fname = self.fw_array[0][0][:-3] + '_merged.mat'
         else:
