@@ -34,13 +34,11 @@ if __name__ == '__main__':
     # need to crop left margin if data is bidirectional
     if info['scanmode'] == 0:
         info['sz'][1] = info['sz'][1]-100
-	template = template[:,100:]
- 
-    ds_template = cv2.pyrDown(template)   
+        template = template[:,100:]
 
     # set max displacement to 190 if magnification is 8x
     if 'magnification' in info and info['magnification'] == 8:
-        w_val = 80 
+        w_val = 80
     else:
         w_val = 15
 
@@ -48,21 +46,20 @@ if __name__ == '__main__':
     output_data = np.memmap('Moco_Aligned_' + filename + '.sbx', dtype='uint16', shape=(info['length'], info['sz'][0], info['sz'][1]), mode = 'w+')
     
     num_cores = multiprocessing.cpu_count()/2
-    #core_assignments = [[np.arange(core,mapped_data.shape[0],num_cores), mapped_data[core::num_cores]] for core in range(num_cores)]
     core_assignments = [np.arange(core,mapped_data.shape[0],num_cores) for core in range(num_cores)]
 
     q = Queue()
     
     print 'Max displacement:',w_val
     print 'Creating processes...'
-    processes = [Process(target=align_purepy, args=(filename,indices,template,ds_template, info['length'], info['sz'][0], mapped_width, info['sz'][1], transform_file, q, info['scanmode'], w_val)) for indices in core_assignments]
+    processes = [Process(target=align_purepy, args=(filename, indices, template, info['length'], info['sz'][0], mapped_width, info['sz'][1], transform_file, q, info['scanmode'], w_val)) for indices in core_assignments]
     
     start = time.time()
 
     for number,process in enumerate(processes):
         process.start()
         print 'Started process ', (number + 1)
-	
+
     print 'Aligning...'
     
     q_list = []
@@ -76,7 +73,7 @@ if __name__ == '__main__':
             break
 
     max_aligned_idx = max(q_list)
-    elapsed_time = time.time() - start 
+    elapsed_time = time.time() - start
 
     print 'Finished. Aligned %d frames in %d seconds' % (max_aligned_idx, elapsed_time)
     print 'Alignment speed: %d frames/sec' % (max_aligned_idx/elapsed_time)

@@ -43,17 +43,16 @@ def find_z(cx,cy,cart,f_moving,f_template,Lx,Rx,Ly,Ry,xy,xy2,rows,cols):
     newXY = np.array([np.arange(-1,2)[minIDX[1]]+xy[0],np.arange(-1,2)[minIDX[0]]+xy[1]]).reshape([2,])
     return newXY
 
-def align_purepy(filename, idx_range, template, ds_template, length, height, mapped_width, width, transform_file, queue, scanmode, w=15):
+def align_purepy(filename, idx_range, template, length, height, mapped_width, width, transform_file, queue, scanmode, w=15):
     
-    #mapped_data = np.memmap(filename + '.sbx', dtype='uint16', shape=(length,height,mapped_width))
     mapped_data = sbxmap(filename + '.sbx')
 
     output_data = np.memmap('Moco_Aligned_' + filename + '.sbx', dtype='uint16', shape=(length, height, width)) 
 
     transforms = np.memmap(transform_file, dtype='int64', shape =(length,2))
     
-    rows = ds_template.shape[0]
-    cols = ds_template.shape[1]
+    ds_template = cv2.pyrDown(template)
+    rows, cols = ds_template.shape
     
     temp = np.zeros([cols+w,rows+w])
     
