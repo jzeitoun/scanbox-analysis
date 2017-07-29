@@ -54,11 +54,11 @@ def sbxread(filename):
     info['sz'] = info['sz'].tolist()
 
     # Defining number of channels/size factor
-    if info['channels'] == 1:
+    if info['channels'] == 1: # both PMTs
         info['nChan'] = 2; factor = 1
-    elif info['channels'] == 2:
+    elif info['channels'] == 2: # green PMT
         info['nChan'] = 1; factor = 2
-    elif info['channels'] == 3:
+    elif info['channels'] == 3: # red PMT
         info['nChan'] = 1; factor = 2
         
     if info['scanmode'] == 0:
