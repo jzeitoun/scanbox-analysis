@@ -43,7 +43,9 @@ def find_z(cx,cy,cart,f_moving,f_template,Lx,Rx,Ly,Ry,xy,xy2,rows,cols):
     newXY = np.array([np.arange(-1,2)[minIDX[1]]+xy[0],np.arange(-1,2)[minIDX[0]]+xy[1]]).reshape([2,])
     return newXY
 
-def align_purepy(filename, idx_range, template, length, height, mapped_width, width, transform_file, queue, scanmode, w=15):
+def align_purepy(filename, idx_range, template, length, height, mapped_width, width, transform_file, num_cores, p_num, queue, scanmode, w=15):
+
+    chunk_size = (idx_range[-1] - idx_range[0]) / 50
     
     mapped_data = sbxmap(filename + '.sbx')
 
@@ -146,5 +148,11 @@ def align_purepy(filename, idx_range, template, length, height, mapped_width, wi
         transforms[idx] = np.int64(newXY)
         M = np.float32([[1,0,newXY[0]],[0,1,newXY[1]]])
         output_data[idx] = np.uint16(cv2.warpAffine(np.float32(moving),M,(cols,rows)))
-        queue.put(idx+1)
-        
+
+        if p_num == num_cores:
+            norm_idx = idx - idx_range[0] + 1
+            if norm_idx % chunk_size == 0:
+                i = norm_idx / chunk_size
+                queue.put(i)
+                if i == 50:
+                    queue.put('STOP')

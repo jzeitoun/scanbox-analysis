@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
     # set max displacement to 190 if magnification is 8x
     if 'magnification' in info and info['magnification'] == 8:
-        w_val = 30
+        w_val = 80
     else:
         w_val = 15
 
@@ -46,37 +46,62 @@ if __name__ == '__main__':
     output_data = np.memmap('Moco_Aligned_' + filename + '.sbx', dtype='uint16', shape=(info['length'], info['sz'][0], info['sz'][1]), mode = 'w+')
     
     num_cores = multiprocessing.cpu_count()/2
-    core_assignments = [np.arange(core,mapped_data.shape[0],num_cores) for core in range(num_cores)]
+    all_idx = np.arange(info['length'])
+    core_assignments = np.array_split(all_idx, num_cores)
+    #core_assignments = [np.arange(core,mapped_data.shape[0],num_cores) for core in range(num_cores)]
 
+    # this queue will be used to track the progress of alignment
     q = Queue()
     
     print 'Max displacement:',w_val
     print 'Creating processes...'
-    processes = [Process(target=align_purepy, args=(filename, indices, template, info['length'], info['sz'][0], mapped_width, info['sz'][1], transform_file, q, info['scanmode'], w_val)) for indices in core_assignments]
-    
+
+    processes = [
+            Process(
+                target=align_purepy,
+                args=(
+                    filename,
+                    indices,
+                    template,
+                    info['length'],
+                    info['sz'][0],
+                    mapped_width,
+                    info['sz'][1],
+                    transform_file,
+                    num_cores,
+                    p_num+1,
+                    q,
+                    info['scanmode'],
+                    w_val
+                )
+            ) for p_num, indices in enumerate(core_assignments)
+        ]
+
     start = time.time()
 
     for number,process in enumerate(processes):
         process.start()
         print 'Started process ', (number + 1)
 
-    print 'Aligning...'
-    
-    q_list = []
-   
-    # confirm that all frames were aligned
-    while True:
-        try:
-            q_list.append(q.get(timeout=20))
-        except Empty:
-            end = time.time()-20
-            break
+    time.sleep(0.5)
 
-    max_aligned_idx = max(q_list)
+    print 'Aligning...'
+
+    # update status of alignment
+    sys.stdout.write('\r')
+    sys.stdout.write('[{:50s}] {}%'.format('=' * 0, 0))
+    sys.stdout.flush()
+    for i in iter(q.get, 'STOP'):
+        sys.stdout.write('\r')
+        sys.stdout.write('[{:50s}] {}%'.format('=' * i, 2 * i))
+        sys.stdout.flush()
+
+    time.sleep(0.5)
+
     elapsed_time = time.time() - start
 
-    print 'Finished. Aligned %d frames in %d seconds' % (max_aligned_idx, elapsed_time)
-    print 'Alignment speed: %d frames/sec' % (max_aligned_idx/elapsed_time)
+    print '\nFinished. Aligned %d frames in %d seconds' % (info['length'], elapsed_time)
+    print 'Alignment speed: %d frames/sec' % (info['length']/elapsed_time)
 
     np.save('Moco_Aligned_' + filename + '_trans',transforms)
     spio_info = loadmat(filename + '.mat')
