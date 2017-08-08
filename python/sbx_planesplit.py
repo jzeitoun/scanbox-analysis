@@ -14,9 +14,8 @@ def split_planes(filename):
     spio_info['info']['otparam'][2] = 1
     
     data = sbxmap(filename)
-
-
-    if len(data) > 1: # 2 channels
+    
+    if len(data.shape) > 3: # 2 channels
         green_data = data[0]
         red_data = data[1]
         
