@@ -37,7 +37,7 @@ if __name__ == '__main__':
         template = template[:,100:]
 
     # set max displacement to 190 if magnification is 8x
-    if ('magnification' in info and info['magnification'] == 8) | info['config']['magnification'] == 8:
+    if ('magnification' in info and info['magnification'] == 8) or info['config']['magnification'] == 8:
         w_val = 80
     else:
         w_val = 15
