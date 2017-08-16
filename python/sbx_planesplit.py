@@ -70,7 +70,7 @@ def split_planes(filename):
         for plane,mapped_plane in enumerate(mapped_planes):
             mapped_plane[:,:,:] = data[plane::nplanes]
             #spio_info['info']['length'] = len(data[plane::nplanes])
-            spio.savemat('{}_plane{}.mat'.format(filename,plane+1),{'info':spio_info['info']})
+            spio.savemat('{}_plane_{}.mat'.format(filename,plane+1),{'info':spio_info['info']})
 
 if __name__ == '__main__':
 
