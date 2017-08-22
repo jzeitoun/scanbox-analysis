@@ -4,6 +4,8 @@ from sbxread import *
 
 def split_planes(filename):
 
+    import ipdb; ipdb.set_trace()
+
     if 'sbx' in filename:
         filename = filename[:-4]
 
@@ -15,7 +17,7 @@ def split_planes(filename):
     
     data = sbxmap(filename)
     
-    if len(data.shape) > 3: # 2 channels
+    if type(data)==tuple: # 2 channels
         green_data = data[0]
         red_data = data[1]
         
