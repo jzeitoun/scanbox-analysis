@@ -19,8 +19,8 @@ if __name__ == '__main__':
 
     info = sbxread(filename)
     mapped_data = sbxmap(filename + '.sbx') #np.memmap(filename + '.sbx', dtype='uint16', shape=(info['length'], info['sz'][0], info['sz'][1]))
-    transform_file = tempfile.mktemp()
-    transforms = np.memmap(transform_file, dtype='int64', mode = 'w+', shape =(info['length'],2))
+    transform_file = tempfile.NamedTemporaryFile(delete=True)
+    transforms = np.memmap(transform_file, dtype='int64', mode = 'r+', shape =(info['length'],2))
     mapped_width = info['sz'][1]
 
     # if second filename is supplied, use template from that file for alignment
@@ -37,7 +37,7 @@ if __name__ == '__main__':
         template = template[:,100:]
 
     # set max displacement to 190 if magnification is 8x
-    if 'magnification' in info and info['magnification'] == 8:
+    if ('magnification' in info and info['magnification'] == 8) or info['config']['magnification'] == 8:
         w_val = 80
     else:
         w_val = 15
@@ -67,7 +67,7 @@ if __name__ == '__main__':
                     info['sz'][0],
                     mapped_width,
                     info['sz'][1],
-                    transform_file,
+                    transforms,
                     num_cores,
                     p_num+1,
                     q,
@@ -107,9 +107,4 @@ if __name__ == '__main__':
     spio_info = loadmat(filename + '.mat')
     spio_info['info']['sz'] = info['sz']
     spio.savemat('Moco_Aligned_' + filename + '.mat',{'info':spio_info['info']})
-
-    del transforms
-    _ = gc.collect()
-    os.remove(transform_file)
-
-
+    transform_file.close()

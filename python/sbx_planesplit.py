@@ -4,6 +4,8 @@ from sbxread import *
 
 def split_planes(filename):
 
+    import ipdb; ipdb.set_trace()
+
     if 'sbx' in filename:
         filename = filename[:-4]
 
@@ -14,9 +16,8 @@ def split_planes(filename):
     spio_info['info']['otparam'][2] = 1
     
     data = sbxmap(filename)
-
-
-    if len(data) > 1: # 2 channels
+    
+    if type(data)==tuple: # 2 channels
         green_data = data[0]
         red_data = data[1]
         
@@ -71,7 +72,7 @@ def split_planes(filename):
         for plane,mapped_plane in enumerate(mapped_planes):
             mapped_plane[:,:,:] = data[plane::nplanes]
             #spio_info['info']['length'] = len(data[plane::nplanes])
-            spio.savemat('{}_plane{}.mat'.format(filename,plane+1),{'info':spio_info['info']})
+            spio.savemat('{}_plane_{}.mat'.format(filename,plane+1),{'info':spio_info['info']})
 
 if __name__ == '__main__':
 

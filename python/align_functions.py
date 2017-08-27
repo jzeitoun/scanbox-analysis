@@ -51,7 +51,8 @@ def align_purepy(filename, idx_range, template, length, height, mapped_width, wi
 
     output_data = np.memmap('Moco_Aligned_' + filename + '.sbx', dtype='uint16', shape=(length, height, width)) 
 
-    transforms = np.memmap(transform_file, dtype='int64', shape =(length,2))
+    #transforms = np.memmap(transform_file, dtype='int64', shape =(length,2))
+    transforms = transform_file
     
     ds_template = cv2.pyrDown(template)
     rows, cols = ds_template.shape
