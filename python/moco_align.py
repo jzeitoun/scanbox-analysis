@@ -50,6 +50,9 @@ def align(sbxmap, indices, translations, w=15, template_indices=None, split=True
     # 3. If data is multiplaned, select template or allow user to select template.
     #       - If the user wants, split the panes into separate files
 
+    import ipdb; ipdb.set_trace()
+
+
     # crop data if bidirectional
     if sbxmap.info['scanmode']: # unidirectional
         margin = 0
@@ -91,7 +94,7 @@ def align(sbxmap, indices, translations, w=15, template_indices=None, split=True
         for plane in range(sbxmap.num_planes):
             output_data_set[plane] = np.memmap('moco_aligned_{}{}_plane_{}.sbx'.format(sbxmap.filename, channel, plane),
                                                dtype='uint16',
-                                               shape=(plane_dimensions)))
+                                               shape=(plane_dimensions))
 
     # prepare template parameters for each plane
     template_params_set = {}

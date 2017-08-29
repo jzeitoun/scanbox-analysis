@@ -22,13 +22,15 @@ class statusbar(object):
         increment_at = (index_list[-1] - index_list[0]) / self.barsize
         norm_i = i - index_list[0] + 1
         if norm_i % increment_at == 0:
-            time.sleep(0.25) # allows time for status bar to update
+            time.sleep(0.05) # allows time for status bar to update
             n = norm_i / increment_at
             self.queue.put(n)
             if n == self.barsize:
                 self.queue.put('STOP')
 
     def run(self):
+        start = time.time()
         self.initialize()
         for i in iter(self.queue.get, 'STOP'):
             self.update(i)
+        return time.time() - start

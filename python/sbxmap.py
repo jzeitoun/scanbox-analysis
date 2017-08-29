@@ -11,18 +11,21 @@ import loadmat as lmat
 class sbxmap(object):
     def __init__(self, filename):
         self.filename = os.path.splitext(filename)[0]
-        self.num_planes = self.info['otparam'][2] if self.info['otparam'] != [] else 1
+
+    @property
+    def num_planes(self):
+        if self.info.has_key('otparam'):
+            return self.info['otparam'][2] if self.info['otparam'] != [] else 1
+        else:
+            return 1
 
     @property
     def shape(self):
         if self.num_planes > 1:
-            plane_length = len(
-                               np.arange(self.info['length'])[::self.num_planes]
-                               )
+            plane_length = len(np.arange(self.info['length'])[::self.num_planes])
             return (plane_length, self.info['sz'][0], self.info['sz'][1])
         else:
             return (self.info['length'], self.info['sz'][0], self.info['sz'][1])
-
 
     @property
     def info(self):
@@ -61,20 +64,19 @@ class sbxmap(object):
         if self.info['channels'] is not 1:
             mapped_data = np.memmap(self.filename + '.sbx', dtype='uint16',
                                     shape=(self.info['length'], self.info['sz'][0], self.info['sz'][1]))
-            if self.num_planes > 1: # is data recorded with optotune?
-                mapped_data = {'plane_{}'.format(i + 1): mapped_data[i::self.num_planes] for i in self.num_planes}
-            return mapped_data
-
+            #if self.num_planes > 1: # is data recorded with optotune?
+            mapped_data = {'plane_{}'.format(i): mapped_data[i::self.num_planes] for i in range(self.num_planes)}
+            return dict(green=mapped_data) if self.channels[0] == 'green' else dict(red=mapped_data)
         else:
             mapped_data = np.memmap(self.filename + '.sbx', dtype='uint16')
             green_data = mapped_data[::2].reshape(self.info['length'], self.info['sz'][0], self.info['sz'][1])
             red_data = mapped_data[1::2].reshape(self.info['length'], self.info['sz'][0], self.info['sz'][1])
-            if self.num_planes == 1: # is data recorded with optotune?
-                return dict(green=green_data, red=red_data)
-            else:
-                green_multiplane = {'plane_{}'.format(i): green_data[i::self.num_planes] for i in range(self.num_planes)}
-                red_multiplane = {'plane_{}'.format(i): red_data[i::self.num_planes] for i in range(self.num_planes)}
-                return dict(green=green_multiplane, red=red_multiplane)
+            # if self.num_planes == 1: # is data recorded with optotune?
+            #     return dict(green=green_data, red=red_data)
+            # else:
+            green_data = {'plane_{}'.format(i): green_data[i::self.num_planes] for i in range(self.num_planes)}
+            red_data = {'plane_{}'.format(i): red_data[i::self.num_planes] for i in range(self.num_planes)}
+            return dict(green=green_data, red=red_data)
 
     def tifsave(self, length=None, rows=None, cols=None, basename=None, rgb=True):
         _depth = Slicer(self.shape[0]) if length == None else Slicer(*length)
@@ -147,7 +149,7 @@ class sbxmap(object):
         holder = np.zeros([chunk_size, rows, cols], dtype='uint16')
         if len(dimensions) == 4: # use RGB output
             for channel in self.channels:
-                tif_input = self.data[channel]
+                tif_input = self.data[channel]['plane_0']
                 for i in indices:
                     if i % chunk_size == 0:
                         end = min(i + chunk_size, depth)
@@ -160,8 +162,8 @@ class sbxmap(object):
             if len(self.channels) > 1:
                 channel = filename.split('_')[0]
             else:
-                channel = slice(None)
-            tif_input = self.data[channel]
+                channel = self.channels[0]
+            tif_input = self.data[channel]['plane_0']
             for i in indices:
                 if i % chunk_size == 0:
                     end = min(i + chunk_size, depth)
@@ -193,7 +195,7 @@ class sbxmap(object):
             if len(self.channels) > 1:
                 channel = filename.split('_')[0]
             else:
-                channel = slice(None)
+                channel = self.channels[0]
             tif_input = self.data[channel][plane]
             for i in indices:
                 if i % chunk_size == 0:

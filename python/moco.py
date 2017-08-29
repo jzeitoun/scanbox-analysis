@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import scipy.io as spio
 import pyfftw
 import tifffile as tiff
 import sys
@@ -8,10 +9,10 @@ import tempfile
 import time
 
 from dotdict import dotdict
+import loadmat as lmat
 from sklearn.utils.extmath import cartesian
-from sbxread import *
 
-def computeT(tVals):  # think about using concatenate instead of append
+def computeT(tVals):
     t = tVals**2
     a = t.cumsum(0).cumsum(1)
     b = t[:,::-1].cumsum(0).cumsum(1)
@@ -41,7 +42,7 @@ def find_z(cx, cy, cart, f_moving, f_template, Lx, Rx, Ly, Ry, xy, xy2, rows, co
     newXY = np.array([np.arange(-1,2)[minIDX[1]] + xy[0], np.arange(-1,2)[minIDX[0]] + xy[1]]).reshape([2,])
     return newXY
 
-def align(sbxmap, indices, translations, w=15, template_indices=None, split=True):
+def align(sbx, w=15, indices=None, translations=None, templates=None, template_indices=None, status=None, split=True, savemat=True):
 
     # 1. Data is bidirectional or unidirectional.
     # 2. Data can be single or multi-channel.
@@ -50,52 +51,87 @@ def align(sbxmap, indices, translations, w=15, template_indices=None, split=True
     # 3. If data is multiplaned, select template or allow user to select template.
     #       - If the user wants, split the panes into separate files
 
+    if isinstance(indices, type(None)):
+        indices = range(sbx.shape[0])
+
     # crop data if bidirectional
-    if sbxmap.info['scanmode']: # unidirectional
+    if sbx.info['scanmode']: # unidirectional
         margin = 0
-        dimensions = (sbxmap.info['length'], sbxmap.info['sz'][0], sbxmap.info['sz'][1])
-        plane_dimensions = sbxmap.shape
+        dimensions = (sbx.info['length'], sbx.info['sz'][0], sbx.info['sz'][1])
+        plane_dimensions = sbx.shape
     else: # bidirectional
         margin = 100
         dimensions[2] = dimensions[2] - 100
         plane_dimensions[2] = plane_dimensions[2] - 100
 
     # TODO: Allow options for aligning red channel and/or using it to align green.
-    # if multichannel, align green channel by default
-    input_data_set = sbxmap.data['green']
-    if len(sbxmap.channels) > 1:
+    # if multichannel, align green channel
+    input_data_set = sbx.data['green']
+    if len(sbx.channels) > 1:
         channel = '_green'
     else:
         channel = ''
 
-    # check if template is user-selected
-    if template_indices == None:
-        templates = [input_data[20:40].mean(0)]
-        if sbx.num_planes > 1:
-            templates = [plane[20:40].mean(0) for plane in input_data.values()]
+    # if none is provided, create file to save translations
+    if isinstance(translations, type(None)):
+        translations_filename = 'moco_aligned_{}{}_translations'.format(sbx.filename, channel)
+        translations_file = tempfile.NamedTemporaryFile(delete=True)
+        translations_set = np.memmap(translations_file,
+                                     dtype='int64',
+                                     shape=(dimensions[0], 2),
+                                     mode='w+')
+        translations_set = {'plane_{}'.format(i): translations_set[i::sbx.num_planes] for i in range(sbx.num_planes)}
+        savetrans = True
     else:
-        template_indices = slice(template_indices)
-        templates = input_data[template_indices].mean(0)
-        if sbx.num_planes > 1:
-            templates = [plane[template_indices] for plane in input_data.values()]
-            # TODO: Allow option to select template by plane.
+        translations_set = translations
+        savetrans = False
+
+    # TODO: Allow option to select template by plane.
+    # check if template is user-selected
+    if templates == None: # templates were not provided, generate them
+        if template_indices == None:
+            templates = [plane[20:40].mean(0) for plane in input_data_set.values()]
+        else:
+            template_indices = slice(template_indices)
+            templates = [plane[template_indices].mean(0) for plane in input_data_set.values()]
+        templates = map(np.uint16, templates) # convert tempaltes to uint16
 
     # choose whether to split planes
-    if split == False:
-        output_data_set = np.memmap('moco_aligned_{}{}.sbx'.format(sbxmap.filename, channel),
+    if split == False or sbx.num_planes == 1:
+        filename = 'moco_aligned_{}{}.sbx'.format(sbx.filename, channel)
+        mode = 'r+' if os.path.exists(filename) else 'w+'
+        output_data_set = np.memmap(filename,
                                     dtype='uint16',
-                                    shape=(dimensions))
-        output_data_set = {'plane_{}'.format(i): output_data_set[i::self.num_planes] for i in range(self.num_planes)}
-    elif split == True and sbxmap.num_planes > 1:
+                                    shape=(dimensions),
+                                    mode=mode)
+        output_data_set = {'plane_{}'.format(i): output_data_set[i::sbx.num_planes] for i in range(sbx.num_planes)}
+    elif split == True:
         output_data_set = {}
-        for plane in range(sbxmap.num_planes):
-            output_data_set[plane] = np.memmap('moco_aligned_{}{}_plane_{}.sbx'.format(sbxmap.filename, channel, plane),
-                                               dtype='uint16',
-                                               shape=(plane_dimensions)))
+        for plane in range(sbx.num_planes):
+            filename = 'moco_aligned_{}{}_plane_{}.sbx'.format(sbx.filename, channel, plane)
+            mode = 'r+' if os.path.exists(filename) else 'w+'
+            output_data_set.update({'plane_{}'.format(plane):np.memmap(filename,
+                                                                       dtype='uint16',
+                                                                       shape=(plane_dimensions),
+                                                                       mode=mode)
+                                                                       })
+
+    # if true save metadata files
+    if savemat == True:
+        spio_info = lmat.loadmat(sbx.filename + '.mat')
+        for plane, output_data in output_data_set.items():
+            spio_info['info']['sz'] = output_data.shape[1:]
+            spio_info['info']['channels'] = 2 # TODO: may need to update when including red channel
+            if split == True:
+                spio_info['info']['resfreq'] = spio_info['info']['resfreq'] / sbx.num_planes
+                spio_info['info']['otparam'] = []
+            spio.savemat(os.path.splitext(output_data.filename)[0] + '.mat', {'info':spio_info['info']})
 
     # prepare template parameters for each plane
     template_params_set = {}
-    for template in templates:
+    for i, template in enumerate(templates):
+        ds_template = cv2.pyrDown(template)
+        rows, cols = ds_template.shape
         temp = np.zeros([cols+w, rows+w])
         tVals = (ds_template.T - ds_template.mean()) / (ds_template.std() * np.sqrt(2))
         tNew = computeT(tVals)
@@ -108,18 +144,23 @@ def align(sbxmap, indices, translations, w=15, template_indices=None, split=True
 
         template_params_set.update({'plane_{}'.format(i):
                                         dotdict(
-                                           template=template
+                                           template=template,
                                            ds_template=ds_template,
                                            tVals=tVals,
+                                           tNew=tNew,
                                            fft_wrapper_object=fft_wrapper_object,
                                            ifft_wrapper_object=ifft_wrapper_object,
                                            tFFT=tFFT)
                                         })
 
     # iterate through each plane and align data
-    for plane,tp in template_params.items():
-        input_data = input_data[plane]
-        output_data = output_data[plane]
+    for plane,tp in template_params_set.items():
+        input_data = input_data_set[plane]
+        output_data = output_data_set[plane]
+        translations = translations_set[plane]
+        if savemat == True:
+            p = plane.split('_')[-1]
+            print('Aligning plane {}/{}'.format(int(p)+1, sbx.num_planes))
         for idx in indices:
             moving = input_data[idx]
             ds_moving = cv2.pyrDown(moving)
@@ -165,7 +206,7 @@ def align(sbxmap, indices, translations, w=15, template_indices=None, split=True
 
             f_moving = np.float64(moving)
             f_template = np.float64(template)
-            xy = 2*xy
+            xy = 2 * xy
 
             rows, cols = moving.shape
             cx = rows / 250
@@ -176,7 +217,6 @@ def align(sbxmap, indices, translations, w=15, template_indices=None, split=True
             rxe = np.rint((rx+1)*rows/cx)
             ryb = np.rint((ry*cols/cy)+1)
             rye = np.rint((ry+1)*cols/cy)
-
 
             cart = cartesian([np.arange(-1,2),np.arange(-1,2)])
             xy2 = cart + xy[::-1]
@@ -193,10 +233,8 @@ def align(sbxmap, indices, translations, w=15, template_indices=None, split=True
             M = np.float32([[1,0,newXY[0]],[0,1,newXY[1]]])
             output_data[idx] = np.uint16(cv2.warpAffine(np.float32(moving),M,(cols,rows)))
 
-            if p_num == num_cores:
-                norm_idx = idx - idx_range[0] + 1
-                if norm_idx % chunk_size == 0:
-                    i = norm_idx / chunk_size
-                    queue.put(i)
-                    if i == 50:
-                        queue.put('stop')
+            if status is not None:
+                status.broadcast(indices, idx)
+
+    if savetrans == True:
+        np.save(translations_filename, translations_set)
