@@ -8,6 +8,7 @@ import os
 import tempfile
 import time
 
+from setproctitle import setproctitle
 from dotdict import dotdict
 import loadmat as lmat
 from sklearn.utils.extmath import cartesian
@@ -42,7 +43,7 @@ def find_z(cx, cy, cart, f_moving, f_template, Lx, Rx, Ly, Ry, xy, xy2, rows, co
     newXY = np.array([np.arange(-1,2)[minIDX[1]] + xy[0], np.arange(-1,2)[minIDX[0]] + xy[1]]).reshape([2,])
     return newXY
 
-def align(sbx, w=15, indices=None, translations=None, templates=None, template_indices=None, status=None, split=True, savemat=True):
+def align(sbx, w=15, indices=None, translations=None, templates=None, template_indices=None, split=True, savemat=True):
 
     # 1. Data is bidirectional or unidirectional.
     # 2. Data can be single or multi-channel.
@@ -51,18 +52,21 @@ def align(sbx, w=15, indices=None, translations=None, templates=None, template_i
     # 3. If data is multiplaned, select template or allow user to select template.
     #       - If the user wants, split the panes into separate files
 
+    setproctitle('moco-sub')
+
     if isinstance(indices, type(None)):
         indices = range(sbx.shape[0])
 
     # crop data if bidirectional
-    if sbx.info['scanmode']: # unidirectional
-        margin = 0
-        dimensions = (sbx.info['length'], sbx.info['sz'][0], sbx.info['sz'][1])
-        plane_dimensions = sbx.shape
-    else: # bidirectional
+    margin = 0
+    dimensions = [sbx.info['length'], sbx.info['sz'][0], sbx.info['sz'][1]]
+    plane_dimensions = list(sbx.shape)
+    if not sbx.info['scanmode']: # bidirectional
         margin = 100
         dimensions[2] = dimensions[2] - 100
         plane_dimensions[2] = plane_dimensions[2] - 100
+    dimensions = tuple(dimensions)
+    plane_dimensions = tuple(plane_dimensions)
 
     # TODO: Allow options for aligning red channel and/or using it to align green.
     # if multichannel, align green channel
@@ -232,9 +236,6 @@ def align(sbx, w=15, indices=None, translations=None, templates=None, template_i
             translations[idx] = np.int64(newXY)
             M = np.float32([[1,0,newXY[0]],[0,1,newXY[1]]])
             output_data[idx] = np.uint16(cv2.warpAffine(np.float32(moving),M,(cols,rows)))
-
-            if status is not None:
-                status.broadcast(indices, idx)
 
     if savetrans == True:
         np.save(translations_filename, translations_set)

@@ -6,24 +6,28 @@ import os
 import sys
 import tempfile
 
+from setproctitle import setproctitle
 import moco
 import loadmat as lmat
 from sbxmap import sbxmap
 from statusbar import statusbar
 
 def generate_indices(sbx):
+    depth, rows, cols = sbx.shape
+    framesize = 2 * rows * cols
     all_indices = np.arange(sbx.shape[0])
-    num_cpu = multiprocessing.cpu_count() / 2
-    return np.array_split(all_indices, num_cpu)
+    #max_size = 1 * 10**8 #3 * 10**9
+    #max_tasks_per_call = max_size / framesize
+    max_tasks_per_call = 50
+    return np.array_split(all_indices, 50)
 
 def generate_dimensions(sbx):
-    if sbx.info['scanmode']: # unidirectional
-        dimensions = (sbx.info['length'], sbx.info['sz'][0], sbx.info['sz'][1])
-        plane_dimensions = sbx.shape
-    else: # bidirectional
+    dimensions = [sbx.info['length'], sbx.info['sz'][0], sbx.info['sz'][1]]
+    plane_dimensions = list(sbx.shape)
+    if not sbx.info['scanmode']: # bidirectional
         dimensions[2] = dimensions[2] - 100
         plane_dimensions[2] = plane_dimensions[2] - 100
-    return dimensions, plane_dimensions
+    return tuple(dimensions), tuple(plane_dimensions)
 
 def generate_templates(sbx, source_file=None, template_indices=None):
     if source_file == None:
@@ -40,11 +44,11 @@ def generate_templates(sbx, source_file=None, template_indices=None):
     return templates
 
 def generate_translations(sbx):
-    dimensions = (sbx.info['length'], sbx.info['sz'][0], sbx.info['sz'][1])
+    length = sbx.info['length']
     translations_file = tempfile.NamedTemporaryFile(delete=True)
     translations_set = np.memmap(translations_file,
                                  dtype='int64',
-                                 shape=(dimensions[0], 2),
+                                 shape=(length, 2),
                                  mode='w+')
 
     translations_set = {'plane_{}'.format(i): translations_set[i::sbx.num_planes] for i in range(sbx.num_planes)}
@@ -82,25 +86,29 @@ def save_mat(sbx, output_data_set, split=True):
             spio_info['info']['otparam'] = []
         spio.savemat(os.path.splitext(output_data.filename)[0] + '.mat', {'info':spio_info['info']})
 
-def run_alignment(params, func='moco'):
-    align_functions = {'moco' : moco.align} # list of possible alignment functions
-    align_func = align_functions[func] # select alignment function
-    print('Using {} alignment.'.format([k for k,v in align_functions.items() if v is align_func][0]))
-    status = statusbar(50)
-    params[-1].update({'status':status}) # pass statusbar to last process
+def kwargs_call(kwargs):
+    align_functions = {'moco' : moco.align}
+    selection = kwargs.pop('func')
+    align_func = align_functions[selection]
+    align_func(**kwargs)
 
-    # create pool of processes and start alignment
-    pool = [multiprocessing.Process(target=align_func, kwargs=params) for params in params_set]
-    for i, process in enumerate(pool):
-        print('Starting process {}'.format(i + 1))
-        process.start()
-
+def run_alignment(params, num_cpu):
+    print('Using {} alignment.'.format(params[0]['func']))
+    print('Alignment using {} processes.'.format(num_cpu))
+    status = statusbar(len(params))
+    pool = multiprocessing.Pool(num_cpu)
     print('Aligning...')
-    time_passed = status.run()
+    status.initialize()
+    start = time.time()
+    for i,_ in enumerate(pool.imap_unordered(kwargs_call, params), 1):
+        status.update(i)
+    time_passed = time.time() - start
     print('\nFinished alignent in {:.3f} seconds. Alignment speed: {:.3f} frames/sec.'.format(time_passed, (sbx.shape[0]/time_passed)))
 
 if __name__ == '__main__':
+    setproctitle('moco')
     filename = os.path.splitext(sys.argv[1])[0]
+    num_cpu = int(sys.argv[2])
     sbx = sbxmap(filename)
     indices = generate_indices(sbx)
     dimensions, plane_dimensions = generate_dimensions(sbx)
@@ -114,14 +122,15 @@ if __name__ == '__main__':
 
     params_set = []
     for i in indices:
-        params_set.append(dict(sbx=sbx,
+        params_set.append(dict(func=func,
+                           sbx=sbx,
                            indices=i,
                            translations=translations,
                            templates=templates,
                            savemat=savemat)
                            )
 
-    run_alignment(params_set, func)
+    run_alignment(params_set, num_cpu)
 
     # save metadata and translations
     save_mat(sbx, output_data_set, split=True)
