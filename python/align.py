@@ -27,19 +27,19 @@ def generate_dimensions(sbx):
     if not sbx.info['scanmode']: # bidirectional
         dimensions[2] = dimensions[2] - 100
         plane_dimensions[2] = plane_dimensions[2] - 100
-    return tuple(dimensions), tuple(plane_dimensions)
+    return margin, tuple(dimensions), tuple(plane_dimensions)
 
-def generate_templates(sbx, source_file=None, template_indices=None):
+def generate_templates(sbx, margin, source_file=None, template_indices=None):
     if source_file == None:
         input_data_set = sbx.data['green']
     else:
         source_file = os.path.splitext(source_file)[0]
         input_data_set = sbx(source_file)
     if template_indices == None:
-        templates = [plane[20:40].mean(0) for plane in input_data_set.values()]
+        templates = [plane[20:40,:,margin:].mean(0) for plane in input_data_set.values()]
     else:
         template_indices = slice(template_indices)
-        templates = [plane[template_indices].mean(0) for plane in input_data_set.values()]
+        templates = [plane[template_indices,:,margin:].mean(0) for plane in input_data_set.values()]
     templates = map(np.uint16, templates) # convert tempaltes to uint16
     return templates
 
@@ -111,9 +111,9 @@ if __name__ == '__main__':
     num_cpu = int(sys.argv[2])
     sbx = sbxmap(filename)
     indices = generate_indices(sbx)
-    dimensions, plane_dimensions = generate_dimensions(sbx)
+    margin, dimensions, plane_dimensions = generate_dimensions(sbx)
     translations = generate_translations(sbx)
-    templates = generate_templates(sbx)
+    templates = generate_templates(sbx, margin)
     print('Allocating space for aligned data...')
     output_data_set = generate_output(sbx, dimensions, plane_dimensions, split=True)
     func = 'moco'

@@ -166,7 +166,7 @@ def align(sbx, w=15, indices=None, translations=None, templates=None, template_i
             p = plane.split('_')[-1]
             print('Aligning plane {}/{}'.format(int(p)+1, sbx.num_planes))
         for idx in indices:
-            moving = input_data[idx]
+            moving = input_data[idx[:,margin:]
             ds_moving = cv2.pyrDown(moving)
             rows, cols = ds_moving.shape
 
