@@ -12,14 +12,11 @@ import loadmat as lmat
 from sbxmap import sbxmap
 from statusbar import statusbar
 
-def generate_indices(sbx):
+def generate_indices(sbx, max_tasks_per_process=50):
     depth, rows, cols = sbx.shape
     framesize = 2 * rows * cols
     all_indices = np.arange(sbx.shape[0])
-    #max_size = 1 * 10**8 #3 * 10**9
-    #max_tasks_per_call = max_size / framesize
-    max_tasks_per_call = 50
-    return np.array_split(all_indices, 50)
+    return np.array_split(all_indices, max_tasks_per_process)
 
 def generate_dimensions(sbx):
     dimensions = [sbx.info['length'], sbx.info['sz'][0], sbx.info['sz'][1]]
@@ -94,11 +91,15 @@ def kwargs_call(kwargs):
     align_func = align_functions[selection]
     align_func(**kwargs)
 
-def run_alignment(params, num_cpu):
+def run_alignment(params, num_cpu=None):
+    if 'linux' in sys.platform:
+        os.system("taskset -p 0xff %d" % os.getpid()) # ensures that cpu affinity remains high
+    if isinstance(num_cpu, type(None)):
+        num_cpu = multiprocessing.cpu_count()
     print('Using {} alignment.'.format(params[0]['func']))
     print('Alignment using {} processes.'.format(num_cpu))
     status = statusbar(len(params))
-    pool = multiprocessing.Pool(num_cpu)
+    pool = multiprocessing.Pool(num_cpu, maxtasksperchild=1) # spawning new processes after each task improves performance
     print('Aligning...')
     status.initialize()
     start = time.time()
@@ -110,7 +111,8 @@ def run_alignment(params, num_cpu):
 if __name__ == '__main__':
     setproctitle('moco')
     filename = os.path.splitext(sys.argv[1])[0]
-    num_cpu = int(sys.argv[2])
+    if len(sys.argv) > 2:
+        num_cpu = int(sys.argv[2])
     sbx = sbxmap(filename)
     indices = generate_indices(sbx)
     margin, dimensions, plane_dimensions = generate_dimensions(sbx)
