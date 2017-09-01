@@ -24,9 +24,11 @@ def generate_indices(sbx):
 def generate_dimensions(sbx):
     dimensions = [sbx.info['length'], sbx.info['sz'][0], sbx.info['sz'][1]]
     plane_dimensions = list(sbx.shape)
+    margin = 0
     if not sbx.info['scanmode']: # bidirectional
         dimensions[2] = dimensions[2] - 100
         plane_dimensions[2] = plane_dimensions[2] - 100
+        margin = 100
     return margin, tuple(dimensions), tuple(plane_dimensions)
 
 def generate_templates(sbx, margin, source_file=None, template_indices=None):
