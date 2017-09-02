@@ -12,11 +12,15 @@ import loadmat as lmat
 from sbxmap import sbxmap
 from statusbar import statusbar
 
-def generate_indices(sbx, max_tasks_per_process=None):
+def generate_indices(sbx, task_size=5):
     depth, rows, cols = sbx.shape
     framesize = 2 * rows * cols
     all_indices = np.arange(sbx.shape[0])
-    return np.array_split(all_indices, all_indices.shape[0])
+    if isinstance(task_size, type(None)):
+        max_tasks_per_process = all_indices.shape[0]
+    else:
+        max_tasks_per_process = all_indices.shape[0] / task_size
+    return np.array_split(all_indices, max_tasks_per_process)
 
 def generate_dimensions(sbx):
     dimensions = [sbx.info['length'], sbx.info['sz'][0], sbx.info['sz'][1]]
@@ -49,11 +53,10 @@ def generate_translations(sbx):
                                  dtype='|S21',
                                  shape=(length, 3),
                                  mode='w+')
-
     translations_set = {'plane_{}'.format(i): translations_set[i::sbx.num_planes] for i in range(sbx.num_planes)}
     for plane in translations_set.values():
-        plane[:,1] = 'empty'
-    return translations_set
+        plane[:,0] = 'empty'
+    return translations_file, translations_set
 
 def generate_output(sbx, dimensions, plane_dimensions, split=True):
     channel = '_green' if len(sbx.channels) > 1 else ''
@@ -98,7 +101,7 @@ def run_alignment(params, num_cpu=None):
         num_cpu = multiprocessing.cpu_count()
     print('Using {} alignment.'.format(params[0]['func']))
     print('Alignment using {} processes.'.format(num_cpu))
-    status = statusbar(len(params))
+    status = statusbar(50, len(params))
     pool = multiprocessing.Pool(num_cpu) # spawning new processes after each task improves performance
     print('Aligning...')
     status.initialize()
@@ -118,7 +121,7 @@ if __name__ == '__main__':
     sbx = sbxmap(filename)
     indices = generate_indices(sbx)
     margin, dimensions, plane_dimensions = generate_dimensions(sbx)
-    translations = generate_translations(sbx)
+    translations_file, translations_set = generate_translations(sbx)
     templates = generate_templates(sbx, margin)
     print('Allocating space for aligned data...')
     output_data_set = generate_output(sbx, dimensions, plane_dimensions, split=True)
@@ -131,7 +134,7 @@ if __name__ == '__main__':
         params_set.append(dict(func=func,
                            sbx=sbx,
                            indices=i,
-                           translations=translations,
+                           translations=translations_file.name,
                            templates=templates,
                            savemat=savemat)
                            )
@@ -141,5 +144,7 @@ if __name__ == '__main__':
     # save metadata and translations
     save_mat(sbx, output_data_set, split=True)
     channel = '_green' if len(sbx.channels) > 1 else ''
+
     translations_filename = 'moco_aligned_{}{}_translations'.format(sbx.filename, channel)
-    np.save(translations_filename, translations)
+    np.save(translations_filename, translations_set)
+    translations_file.close()

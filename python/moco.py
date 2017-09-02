@@ -43,7 +43,7 @@ def find_z(cx, cy, cart, f_moving, f_template, Lx, Rx, Ly, Ry, xy, xy2, rows, co
     newXY = np.array([np.arange(-1,2)[minIDX[1]] + xy[0], np.arange(-1,2)[minIDX[0]] + xy[1]]).reshape([2,])
     return newXY
 
-def align(sbx, w=15, indices=None, translations=None, templates=None, template_indices=None, split=True, savemat=True):
+def align(sbx, w=15, translations=None, indices=None, templates=None, template_indices=None, split=True, savemat=True):
 
     # 1. Data is bidirectional or unidirectional.
     # 2. Data can be single or multi-channel.
@@ -80,26 +80,32 @@ def align(sbx, w=15, indices=None, translations=None, templates=None, template_i
     if isinstance(translations, type(None)):
         translations_filename = 'moco_aligned_{}{}_translations'.format(sbx.filename, channel)
         translations_file = tempfile.NamedTemporaryFile(delete=True)
-        translations_set = np.memmap(translations_file,
-                                     dtype='|S21',
-                                     shape=(dimensions[0], 3),
-                                     mode='w+')
-        translations_set = {'plane_{}'.format(i): translations_set[i::sbx.num_planes] for i in range(sbx.num_planes)}
+        temp_filename = translations_file.name
+        savetrans = True
+        tmode = 'w+'
+        fill = True
+    else:
+        temp_filename = translations
+        savetrans = False
+        tmode = 'r+'
+        fill = False
+    translations_set = np.memmap(temp_filename,
+                                 dtype='|S21',
+                                 shape=(dimensions[0], 3),
+                                 mode=tmode)
+    translations_set = {'plane_{}'.format(i): translations_set[i::sbx.num_planes] for i in range(sbx.num_planes)}
+    if fill == True:
         for plane in translations_set.values():
             plane[:,0] = 'empty'
-        savetrans = True
-    else:
-        translations_set = translations
-        savetrans = False
 
     # TODO: Allow option to select template by plane.
     # check if template is user-selected
     if templates == None: # templates were not provided, generate them
         if template_indices == None:
-            templates = [plane[20:40].mean(0) for plane in input_data_set.values()]
+            templates = [plane[20:40,:,margin:].mean(0) for plane in input_data_set.values()]
         else:
             template_indices = slice(template_indices)
-            templates = [plane[template_indices].mean(0) for plane in input_data_set.values()]
+            templates = [plane[template_indices,:,margin:].mean(0) for plane in input_data_set.values()]
         templates = map(np.uint16, templates) # convert tempaltes to uint16
 
     # choose whether to split planes
@@ -163,7 +169,7 @@ def align(sbx, w=15, indices=None, translations=None, templates=None, template_i
     for plane,tp in template_params_set.items():
         input_data = input_data_set[plane]
         output_data = output_data_set[plane]
-        translations = translations_set[plane]
+        plane_translations = translations_set[plane]
         if savemat == True:
             p = plane.split('_')[-1]
             print('Aligning plane {}/{}'.format(int(p)+1, sbx.num_planes))
@@ -234,10 +240,10 @@ def align(sbx, w=15, indices=None, translations=None, templates=None, template_i
             Ry = np.int64(np.minimum(np.tile(rye,(9,1)),np.tile(np.array([cols-greaterThan[:,1]*xy2[:,1]]).T,(1,cy))))
 
             newX, newY = find_z(cx,cy,cart,f_moving,f_template,Lx,Rx,Ly,Ry,xy,xy2,rows,cols)
-
-            translations[idx] = ['empty', newX, newY]
+            plane_translations[idx] = ['applied', newX, newY]
             M = np.float32([[1,0,newX],[0,1,newY]])
             output_data[idx] = np.uint16(cv2.warpAffine(np.float32(moving),M,(cols,rows)))
 
     if savetrans == True:
         np.save(translations_filename, translations_set)
+        translations_file.close()
