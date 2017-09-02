@@ -46,11 +46,13 @@ def generate_translations(sbx):
     length = sbx.info['length']
     translations_file = tempfile.NamedTemporaryFile(delete=True)
     translations_set = np.memmap(translations_file,
-                                 dtype='int64',
-                                 shape=(length, 2),
+                                 dtype='|S21',
+                                 shape=(length, 3),
                                  mode='w+')
 
     translations_set = {'plane_{}'.format(i): translations_set[i::sbx.num_planes] for i in range(sbx.num_planes)}
+    for plane in translations_set.values():
+        plane[:,1] = 'empty'
     return translations_set
 
 def generate_output(sbx, dimensions, plane_dimensions, split=True):

@@ -81,10 +81,12 @@ def align(sbx, w=15, indices=None, translations=None, templates=None, template_i
         translations_filename = 'moco_aligned_{}{}_translations'.format(sbx.filename, channel)
         translations_file = tempfile.NamedTemporaryFile(delete=True)
         translations_set = np.memmap(translations_file,
-                                     dtype='int64',
-                                     shape=(dimensions[0], 2),
+                                     dtype='|S21',
+                                     shape=(dimensions[0], 3),
                                      mode='w+')
         translations_set = {'plane_{}'.format(i): translations_set[i::sbx.num_planes] for i in range(sbx.num_planes)}
+        for plane in translations_set.values():
+            plane[:,0] = 'empty'
         savetrans = True
     else:
         translations_set = translations
@@ -231,10 +233,10 @@ def align(sbx, w=15, indices=None, translations=None, templates=None, template_i
             Ly = np.int64(np.maximum(np.tile(ryb,(9,1)),np.tile(np.array([1-lessThan[:,1]*xy2[:,1]]).T,(1,cy))))-1
             Ry = np.int64(np.minimum(np.tile(rye,(9,1)),np.tile(np.array([cols-greaterThan[:,1]*xy2[:,1]]).T,(1,cy))))
 
-            newXY = find_z(cx,cy,cart,f_moving,f_template,Lx,Rx,Ly,Ry,xy,xy2,rows,cols)
+            newX, newY = find_z(cx,cy,cart,f_moving,f_template,Lx,Rx,Ly,Ry,xy,xy2,rows,cols)
 
-            translations[idx] = np.int64(newXY)
-            M = np.float32([[1,0,newXY[0]],[0,1,newXY[1]]])
+            translations[idx] = ['empty', newX, newY]
+            M = np.float32([[1,0,newX],[0,1,newY]])
             output_data[idx] = np.uint16(cv2.warpAffine(np.float32(moving),M,(cols,rows)))
 
     if savetrans == True:
