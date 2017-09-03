@@ -113,6 +113,7 @@ def run_alignment(params, num_cpu=None):
 
 if __name__ == '__main__':
     setproctitle('moco')
+    oldmask = os.umask(007)
     filename = os.path.splitext(sys.argv[1])[0]
     if sys.argv[2] is not '':
         num_cpu = int(sys.argv[2])
