@@ -12,7 +12,7 @@ import loadmat as lmat
 from sbxmap import sbxmap
 from statusbar import statusbar
 
-def generate_indices(sbx, task_size=5):
+def generate_indices(sbx, task_size=10):
     depth, rows, cols = sbx.shape
     framesize = 2 * rows * cols
     all_indices = np.arange(sbx.shape[0])
@@ -101,7 +101,7 @@ def run_alignment(params, num_cpu=None):
         num_cpu = multiprocessing.cpu_count()
     print('Using {} alignment.'.format(params[0]['func']))
     print('Alignment using {} processes.'.format(num_cpu))
-    status = statusbar(50, len(params))
+    status = statusbar(len(params), 50)
     pool = multiprocessing.Pool(num_cpu) # spawning new processes after each task improves performance
     print('Aligning...')
     status.initialize()
