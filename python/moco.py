@@ -43,7 +43,43 @@ def find_z(cx, cy, cart, f_moving, f_template, Lx, Rx, Ly, Ry, xy, xy2, rows, co
     newXY = np.array([np.arange(-1,2)[minIDX[1]] + xy[0], np.arange(-1,2)[minIDX[0]] + xy[1]]).reshape([2,])
     return newXY
 
-def align(sbx, w=15, translations=None, indices=None, templates=None, template_indices=None, split=True, savemat=True):
+def apply_translations(sbx, translations_filename, channel, indices, split=True):
+    input_data_set = sbx.data()[channel]
+    translations = np.load(translations_filename).tolist()
+    # map output files
+    if split == False or sbx.num_planes == 1:
+        filename = 'moco_aligned_{}{}.sbx'.format(sbx.filename, channel)
+        mode = 'r+' if os.path.exists(filename) else 'w+'
+        output_data_set = np.memmap(filename,
+                                    dtype='uint16',
+                                    shape=(dimensions),
+                                    mode=mode)
+        output_data_set = {'plane_{}'.format(i): output_data_set[i::sbx.num_planes] for i in range(sbx.num_planes)}
+    elif split == True:
+        output_data_set = {}
+        for plane in range(sbx.num_planes):
+            filename = 'moco_aligned_{}{}_plane_{}.sbx'.format(sbx.filename, channel, plane)
+            mode = 'r+' if os.path.exists(filename) else 'w+'
+            output_data_set.update({'plane_{}'.format(plane):np.memmap(filename,
+                                                                       dtype='uint16',
+                                                                       shape=(plane_dimensions),
+                                                                       mode=mode)
+                                                                       })
+    for plane, plane_translations in translations.items():
+        input_data = input_data_set[plane]
+        output_data = output_data_set[plane]
+        for idx in indices:
+            moving = input_data[idx]
+            rows,cols = moving.shape
+            _,x,y = plane_translations[idx]
+            M = np.float32([[1,0,x],[0,1,y]])
+            output_data[idx] = np.uint16(cv2.warpAffine(np.float32(moving),M,(cols,rows)))
+
+
+def align(
+        sbx, channel='green', w=15, translations=None,
+        indices=None, templates=None, template_indices=None,
+        split=True, savemat=True):
 
     # 1. Data is bidirectional or unidirectional.
     # 2. Data can be single or multi-channel.
@@ -70,9 +106,9 @@ def align(sbx, w=15, translations=None, indices=None, templates=None, template_i
 
     # TODO: Allow options for aligning red channel and/or using it to align green.
     # if multichannel, align green channel
-    input_data_set = sbx.data['green']
+    input_data_set = sbx.data()[channel]
     if len(sbx.channels) > 1:
-        channel = '_green'
+        channel = '_' + channel
     else:
         channel = ''
 
