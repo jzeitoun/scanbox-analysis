@@ -43,12 +43,16 @@ def find_z(cx, cy, cart, f_moving, f_template, Lx, Rx, Ly, Ry, xy, xy2, rows, co
     newXY = np.array([np.arange(-1,2)[minIDX[1]] + xy[0], np.arange(-1,2)[minIDX[0]] + xy[1]]).reshape([2,])
     return newXY
 
-def apply_translations(sbx, translations_filename, channel, indices, split=True):
+def validate_range(indices, max_idx):
+    mask = indices < max_idx
+    return indices[mask]
+
+def apply_translations(sbx, translations_filename, channel, indices, dimensions, plane_dimensions, split=True):
     input_data_set = sbx.data()[channel]
-    translations = np.load(translations_filename).tolist()
+    translations = np.load(translations_filename + '.npy').tolist()
     # map output files
     if split == False or sbx.num_planes == 1:
-        filename = 'moco_aligned_{}{}.sbx'.format(sbx.filename, channel)
+        filename = 'moco_aligned_{}_{}.sbx'.format(sbx.filename, channel)
         mode = 'r+' if os.path.exists(filename) else 'w+'
         output_data_set = np.memmap(filename,
                                     dtype='uint16',
@@ -58,7 +62,7 @@ def apply_translations(sbx, translations_filename, channel, indices, split=True)
     elif split == True:
         output_data_set = {}
         for plane in range(sbx.num_planes):
-            filename = 'moco_aligned_{}{}_plane_{}.sbx'.format(sbx.filename, channel, plane)
+            filename = 'moco_aligned_{}_{}_plane_{}.sbx'.format(sbx.filename, channel, plane)
             mode = 'r+' if os.path.exists(filename) else 'w+'
             output_data_set.update({'plane_{}'.format(plane):np.memmap(filename,
                                                                        dtype='uint16',
@@ -68,6 +72,7 @@ def apply_translations(sbx, translations_filename, channel, indices, split=True)
     for plane, plane_translations in translations.items():
         input_data = input_data_set[plane]
         output_data = output_data_set[plane]
+        indices = validate_range(indices, input_data.shape[0])
         for idx in indices:
             moving = input_data[idx]
             rows,cols = moving.shape
@@ -206,6 +211,7 @@ def align(
         input_data = input_data_set[plane]
         output_data = output_data_set[plane]
         plane_translations = translations_set[plane]
+        indices = validate_range(indices, input_data.shape[0])
         if savemat == True:
             p = plane.split('_')[-1]
             print('Aligning plane {}/{}'.format(int(p)+1, sbx.num_planes))

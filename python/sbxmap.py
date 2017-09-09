@@ -181,5 +181,5 @@ def write(sbx, filename=None, _rows=None, _cols=None, indices=None):
             channel = sbx.channels[0]
         tif_input = sbx.data()[channel][plane]
         for i in indices:
-            tif_output[i] = tif_input[i]
+            tif_output[i] = ~tif_input[i]
 
