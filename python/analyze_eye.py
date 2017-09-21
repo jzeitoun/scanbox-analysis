@@ -249,16 +249,17 @@ def analyze_eye(filename,write=0):
         raw_pos_trace = [[eye_data.shape[1],eye_data.shape[2]],raw_pos_trace]
 
         np.save(filename + '_pupil_area',area_trace)
-        np.save(filename + '_raw_xy_position', raw_pos_trace)
+        np.jksave(filename + '_raw_xy_position', raw_pos_trace)
         np.save(filename + '_norm_xy_position',centroid_trace)
         np.save(filename + '_angular_rotation',angular_rotation)
 
         return area_trace,angular_rotation
 
+def main():
+    if 'write' in sys.argv:
+        analyze_eye(sys.argv[1], sys.argv[2])
+    else:
+        analyze_eye(sys.argv[1])
+
 if __name__ == '__main__':
-
-    file_list = os.listdir(os.getcwd())
-    file_list = [filename for filename in file_list if sys.argv[1] in filename]
-
-    for filename in file_list:
-        analyze_eye(filename)
+    main()
