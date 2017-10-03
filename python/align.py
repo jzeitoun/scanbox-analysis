@@ -91,7 +91,7 @@ def save_mat(sbx, output_data_set, channel='green', split=True):
     spio_info = lmat.loadmat(sbx.filename + '.mat')
     for plane, output_data in output_data_set.items():
         spio_info['info']['sz'] = output_data.shape[1:]
-        spio_info['info'][channels[channel]] = 2 # TODO: may need to update when including red channel
+        spio_info['info']['channels'] = channels[channel]
         if split == True:
             spio_info['info']['resfreq'] = spio_info['info']['resfreq'] / sbx.num_planes
             spio_info['info']['otparam'] = []
