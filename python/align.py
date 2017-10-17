@@ -89,12 +89,12 @@ def generate_output(sbx, dimensions, plane_dimensions, channel='green', split=Tr
 def save_mat(sbx, output_data_set, channel='green', split=True):
     channels = {'green': 2, 'red': 3}
     spio_info = lmat.loadmat(sbx.filename + '.mat')
+    spio_info['info']['channels'] = channels[channel]
+    if split == True:
+        spio_info['info']['resfreq'] = spio_info['info']['resfreq'] / sbx.num_planes
+        spio_info['info']['otparam'] = []
     for plane, output_data in output_data_set.items():
         spio_info['info']['sz'] = output_data.shape[1:]
-        spio_info['info']['channels'] = channels[channel]
-        if split == True:
-            spio_info['info']['resfreq'] = spio_info['info']['resfreq'] / sbx.num_planes
-            spio_info['info']['otparam'] = []
         spio.savemat(os.path.splitext(output_data.filename)[0] + '.mat', {'info':spio_info['info']})
 
 def kwargs_wrapper(kwargs):
@@ -185,15 +185,6 @@ if __name__ == '__main__':
         channel = 'green'
     if 'red' in sys.argv:
         channel = 'red'
-    #if (len(sys.argv) > 2) and sys.argv[2] is not '': # user can specify to align green or red if file is multichannel
-    #    if len(sbx.channels) > 1:
-    #        if sys.argv[2] == 'green' or sys.argv[2] == 'red':
-    #            channel = sys.argv[2]
-    #        elif sys.argv[2] == '-to-red':
-    #            align_to_red = True
-    #            channel = 'red'
-    #        else:
-    #            raise ValueError('Not a valid argument: {}'.format(sys.argv[2]))
     if '-to-red' in sys.argv:
         if len(sbx.channels) > 1:
             channel = 'red'
