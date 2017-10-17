@@ -50,6 +50,13 @@ def validate_range(indices, max_idx):
 def apply_translations(sbx, translations_filename, channel, indices, dimensions, plane_dimensions, split=True):
     input_data_set = sbx.data()[channel]
     translations = np.load(translations_filename + '.npy').tolist()
+
+    # crop data if bidirectional
+    if sbx.info['scanmode']: # unidirectional
+        margin = 0
+    else: # bidirectional
+        margin = 100
+
     # map output files
     if split == False or sbx.num_planes == 1:
         filename = 'moco_aligned_{}_{}.sbx'.format(sbx.filename, channel)
@@ -74,7 +81,7 @@ def apply_translations(sbx, translations_filename, channel, indices, dimensions,
         output_data = output_data_set[plane]
         indices = validate_range(indices, input_data.shape[0])
         for idx in indices:
-            moving = input_data[idx]
+            moving = input_data[idx,:,margin:]
             rows,cols = moving.shape
             _,x,y = plane_translations[idx]
             M = np.float32([[1,0,x],[0,1,y]])

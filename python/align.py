@@ -89,12 +89,12 @@ def generate_output(sbx, dimensions, plane_dimensions, channel='green', split=Tr
 def save_mat(sbx, output_data_set, channel='green', split=True):
     channels = {'green': 2, 'red': 3}
     spio_info = lmat.loadmat(sbx.filename + '.mat')
+    spio_info['info']['channels'] = channels[channel]
+    if split == True:
+        spio_info['info']['resfreq'] = spio_info['info']['resfreq'] / sbx.num_planes
+        spio_info['info']['otparam'] = []
     for plane, output_data in output_data_set.items():
         spio_info['info']['sz'] = output_data.shape[1:]
-        spio_info['info'][channels[channel]] = 2 # TODO: may need to update when including red channel
-        if split == True:
-            spio_info['info']['resfreq'] = spio_info['info']['resfreq'] / sbx.num_planes
-            spio_info['info']['otparam'] = []
         spio.savemat(os.path.splitext(output_data.filename)[0] + '.mat', {'info':spio_info['info']})
 
 def kwargs_wrapper(kwargs):
@@ -128,6 +128,34 @@ def generate_visual(filename, fmt='eps'):
     common_basename = '_'.join(basename.split('_')[:5])
     translations = np.load('{}_translations.npy'.format(common_basename)).tolist()
 
+    contents = os.listdir(os.getcwd())
+    matched_filenames = list(set([os.path.splitext(f)[0] for f in contents if (common_basename in f) and ('translations' not in f)]))
+    # map data for X-T + Y-T slices
+    for basename in matched_filenames:
+        sbx = sbxmap(basename + '.sbx')
+        depth,rows,cols = sbx.shape
+        for channel,channel_data in sbx.data().items():
+            for plane,data in channel_data.items():
+                XT = np.mean(~sbx.data()[channel][plane][:,:,(cols//2)-20:(cols//2)+20],2).T
+                # get max and min pixel values (excluding "false black translation pixels") for proper scaling
+                xclim_max = np.max(XT[XT<65535])
+                xclim_min = np.min(XT[XT>0])
+                xtfig = plt.figure()
+                plt.imshow(XT, aspect='auto')
+                plt.clim(xclim_min, xclim_max)
+                plt.title('X-T Slices')
+                # save figure
+                xtfig.savefig('{}_XT.png'.format(basename))
+                # repeat for Y-T
+                YT = np.mean(~sbx.data()[channel][plane][:,(rows//2)-20:(rows//2)+20,:],1).T
+                yclim_max = np.max(YT[YT<65535])
+                yclim_min = np.min(YT[YT>0])
+                ytfig = plt.figure()
+                plt.imshow(YT, aspect='auto')
+                plt.clim(yclim_min, yclim_max)
+                plt.title('Y-T Slices')
+                ytfig.savefig('{}_YT.png'.format(basename))
+
     for plane,translations_set in translations.items():
         # extract translations
         x = np.int64(translations_set[:,1])
@@ -143,30 +171,6 @@ def generate_visual(filename, fmt='eps'):
         plt.plot(y)
         yfig.savefig('{}_{}_y.{}'.format(common_basename, plane, fmt))
 
-    # map data for X-T + Y-T slices
-    sbx = sbxmap(basename + '.sbx')
-    depth,rows,cols = sbx.shape
-    for channel,channel_data in sbx.data().items():
-        for plane,data in channel_data.items():
-            XT = np.mean(~sbx.data()[channel][plane][:,:,(cols//2)-20:(cols//2)+20],2).T
-            # get max and min pixel values (excluding "false black translation pixels") for proper scaling
-            xclim_max = np.max(XT[XT<65535])
-            xclim_min = np.min(XT[XT>0])
-            xtfig = plt.figure()
-            plt.imshow(XT, aspect='auto')
-            plt.clim(xclim_min, xclim_max)
-            plt.title('X-T Slices')
-            # save figure
-            xtfig.savefig('{}_{}_{}_XT.png'.format(common_basename, channel, plane))
-            # repeat for Y-T
-            YT = np.mean(~sbx.data()[channel][plane][:,(rows//2)-20:(rows//2)+20,:],1).T
-            yclim_max = np.max(YT[YT<65535])
-            yclim_min = np.min(YT[YT>0])
-            ytfig = plt.figure()
-            plt.imshow(YT, aspect='auto')
-            plt.clim(yclim_min, yclim_max)
-            plt.title('Y-T Slices')
-            ytfig.savefig('{}_{}_{}_YT.png'.format(common_basename, channel, plane))
 
 if __name__ == '__main__':
     setproctitle('moco')
@@ -176,17 +180,19 @@ if __name__ == '__main__':
     sbx = sbxmap(filename)
     channel = sbx.channels[0] # default channel to align is the first channel in the file
     align_to_red = False
-    if (len(sys.argv) > 2) and sys.argv[2] is not '': # user can specify to align green or red if file is multichannel
+    visualize = False
+    if 'green' in sys.argv:
+        channel = 'green'
+    if 'red' in sys.argv:
+        channel = 'red'
+    if '-to-red' in sys.argv:
         if len(sbx.channels) > 1:
-            if sys.argv[2] == 'green' or sys.argv[2] == 'red':
-                channel = sys.argv[2]
-            elif sys.argv[2] == '-to-red':
-                align_to_red = True
-                channel = 'red'
-            else:
-                raise ValueError('Not a valid argument: {}'.format(sys.argv[2]))
+            channel = 'red'
+            align_to_red = True
         else:
             print('File only contains one channel. Aligning {}.'.format(channel))
+    if '-vis' in sys.argv:
+        visualize = True
     indices = generate_indices(sbx)
     margin, dimensions, plane_dimensions = generate_dimensions(sbx)
     translations_file, translations_set = generate_translations(sbx)
@@ -248,9 +254,8 @@ if __name__ == '__main__':
         save_mat(sbx, green_output_data_set, split=True)
 
     # added to generate visualization of alignment
-    print('\nGenerating visualization of alignment.')
-    import matplotlib.pyplot as plt # import here becase of interference with multiprocessing
-    for mapped_data in output_data_set.values():
-        generate_visual(mapped_data.filename)
-    print('Done.')
+    if visualize:
+        print('\nGenerating visualization of alignment.')
+        generate_visual(output_data_set.values()[0].filename)
+        print('Done.')
 
