@@ -176,11 +176,12 @@ if __name__ == '__main__':
     setproctitle('moco')
     oldmask = os.umask(007)
     filename = os.path.splitext(sys.argv[1])[0]
-    num_cpu=None
+    num_cpu = None
     sbx = sbxmap(filename)
     channel = sbx.channels[0] # default channel to align is the first channel in the file
     align_to_red = False
     visualize = False
+    w = 15
     if 'green' in sys.argv:
         channel = 'green'
     if 'red' in sys.argv:
@@ -193,6 +194,15 @@ if __name__ == '__main__':
             print('File only contains one channel. Aligning {}.'.format(channel))
     if '-vis' in sys.argv:
         visualize = True
+        print('Set to visualize alignment.')
+    if '-max' in sys.argv:
+        max_idx = sys.argv.index('-max')
+        max_arg = sys.argv[max_idx + 1]
+        try:
+            w = int(max_arg)
+            print('Max displacement set to {}.'.format(w))
+        except:
+            raise ValueError('Max displacement argument must be an integer.')
     indices = generate_indices(sbx)
     margin, dimensions, plane_dimensions = generate_dimensions(sbx)
     translations_file, translations_set = generate_translations(sbx)
@@ -200,7 +210,6 @@ if __name__ == '__main__':
     print('Allocating space for aligned data...')
     output_data_set = generate_output(sbx, dimensions, plane_dimensions, channel, split=True)
     savemat = False
-    # TODO: Include variable w selection for Carey's high mag recordings.
 
     params_set = []
     for i in indices:
