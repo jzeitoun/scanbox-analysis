@@ -13,15 +13,15 @@ def analyze_eye(filename,write=0):
     '''
     # restricts pupil search to +/- this value from the center
     if 'eye2' in filename:
-        bounding_region = 100
+        bounding_region = 25
         #thresh_val = 75
-        thresh_val = 150
+        thresh_val = 200
         factor = -1
         pixels_per_mm = 195.0/4
     else:
-        bounding_region = 80
+        bounding_region = 25
         #thresh_val = 44
-        thresh_val = 120
+        thresh_val = 240
         factor = 1
         pixels_per_mm = 138.0/4
     r_effective = 1.25 # radius of pupil to center of eyeball
@@ -32,8 +32,9 @@ def analyze_eye(filename,write=0):
         filename = filename[:-4]
     data = h5py.File(filename + '.mat')
     eye_data = np.squeeze(np.array(data['data'])).transpose(0,2,1)
+    depth,rows,cols = eye_data.shape
 
-    eye_data_center = np.array(eye_data.shape[1:3])/2 # find center of entire frame
+    eye_data_center = np.array(eye_data.shape[1:])/2 # find center of entire frame
     area_trace = np.zeros(eye_data.shape[0]) # pupillary area in mm^2
     centroid_trace = np.zeros([eye_data.shape[0],2],dtype='int64') # position of centroid in xy coordinates
     raw_pos_trace = centroid_trace.copy()
@@ -48,7 +49,8 @@ def analyze_eye(filename,write=0):
     bad_count = 0
 
     if write:
-        rgb_eye_data = np.zeros([eye_data.shape[0],eye_data.shape[1],eye_data.shape[2],3],dtype='uint8')
+        rgb_eye_data = tif.tifffile.memmap(filename + '_tracked.tif', dtype='uint8', shape=(depth,rows,cols,3))
+        #rgb_eye_data = np.zeros([eye_data.shape[0],eye_data.shape[1],eye_data.shape[2],3],dtype='uint8')
         for i in range(eye_data.shape[0]):
             # apply adaptive histogram equalization
             eye_frame_full = clahe.apply(eye_data[i])
@@ -95,7 +97,7 @@ def analyze_eye(filename,write=0):
                 circ_score_list.append(circ_score)
 
                 # if score is bad
-                if circ_score > 1.25:
+                if circ_score > 1.5:
                     color = (255,0,0)
                     centroid_trace[i] = centroid_trace[i-1]
                     raw_pos_trace[i] = raw_pos_trace[i-1]
@@ -129,7 +131,7 @@ def analyze_eye(filename,write=0):
 
                 # stamp circularity score
                 font = cv2.FONT_HERSHEY_SIMPLEX
-                cv2.putText(rgb_eye_frame,str(circ_score),(10,200), font, 1, color, 2)
+                cv2.putText(rgb_eye_frame,str(circ_score),(10, int(.9*rows)), font, 1, color, 2)
 
                 rgb_eye_data[i] = rgb_eye_frame
 
@@ -159,7 +161,7 @@ def analyze_eye(filename,write=0):
 
                 rgb_eye_data[i] = rgb_eye_frame
 
-        print 'Bad Counts:',bad_count
+        print 'Bad Counts:', bad_count
         angular_rotation = np.zeros(centroid_trace.shape)
         angular_rotation[:,0] = np.arcsin((centroid_trace[:,0]/pixels_per_mm)/r_effective) * factor # Eh in radians
         angular_rotation[:,1] = np.arcsin((centroid_trace[:,1]/pixels_per_mm)/r_effective) # Ev in radians
@@ -167,12 +169,11 @@ def analyze_eye(filename,write=0):
 
         raw_pos_trace = [[eye_data.shape[1],eye_data.shape[2]],raw_pos_trace]
 
-        #import ipdb; ipdb.set_trace()
         np.save(filename + '_circ_score',circ_score_list)
         np.save(filename + '_pupil_area',area_trace)
         np.save(filename + '_raw_xy_position', raw_pos_trace)
         np.save(filename + '_angular_rotation',angular_rotation)
-        tif.imsave(filename + '_tracked.tif',rgb_eye_data)
+        #tif.imsave(filename + '_tracked.tif', rgb_eye_data)
 
     else:
         for i in range(eye_data.shape[0]):
