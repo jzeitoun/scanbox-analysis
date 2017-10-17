@@ -14,14 +14,19 @@ def sub2ind(array_shape, rows, cols):
     return (rows*array_shape[1]) + cols + 1
   
 def get_receptive_field(io_file,_workspace, pixel_duration=None, trailing_seconds=2):
-    if '.io' in io_file:
-        io_file = io_file[:-3]
+    #if '.io' in io_file:
+    #    io_file = io_file[:-3]
+    io_file = os.path.splitext(io_file)[0]
     name = io_file.split('_')
-    basename = [word for word in name if 'Aligned' not in word and 'Moco' not in word]
-    basename = '_'.join(basename)
-    path = os.getcwd()                                                     
+    basename = '_'.join(name[-3:])
+    io_file = io_file + '.io'
+    mouse_name = os.getcwd().split('/')[-2]
+    #basename = [word for word in name if 'Aligned' not in word and 'Moco' not in word]
+    #basename = '_'.join(basename)
+    path = os.getcwd()
     ex = ExperimentV1()
-    io = ScanboxIO(os.path.join(path,io_file + '.io'))
+    io = ScanboxIO(os.path.abspath(io_file))
+    #io = ScanboxIO(os.path.join(path,io_file + '.io'))
     workspace = [w for w in io.condition.workspaces if w.name == _workspace][0]
     rois = [roi for roi in workspace.rois]
     os.mkdir(io_file + '-analysis')
@@ -39,7 +44,7 @@ def get_receptive_field(io_file,_workspace, pixel_duration=None, trailing_second
 
     for roi in rois:
         dtoverallmean = roi.dtoverallmean.value
-        c_id = ex.find_keyword(basename)[0][0]
+        c_id = ex.find_keyword(mouse_name + '_' + basename)[0][0]
         # extract conditions from db
         conditions = ex.get_by_id(c_id).ordered_trials
         sq_size = max([c['y'] for c in conditions]) + 1
