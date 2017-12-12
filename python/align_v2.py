@@ -65,18 +65,26 @@ def generate_output(sbx, split_chan=False, split_planes=True):
             meta['info']['sz'][1] = meta['info']['sz'][1] - 100
         spio.savemat(basename + '.mat', {'info':meta['info']})
 
-    # Generate memory-mapped files
-    print('Allocating space for aligned data...')
-    mmap_size = os.path.getsize(sbx.filename + '.sbx') // 2 // len(output_set)
-    for output in output_set:
-        np.memmap(output, dtype='uint16', mode='w+', shape=mmap_size)
-
     # Crop source data if bidirectional
     source = sbx.data()
     if not sbx.info['scanmode']:
         for channel,planes in source.items():
             for plane,value in planes.items():
                 source[channel][plane] = value[:,:,100:]
+
+    rows,cols = sbx.info['sz']
+    cols = cols - 100 if not sbx.info['scanmode'] else cols
+
+    source_size = np.prod((sbx.info['length'] * len(sbx.channels), rows, cols))
+    #source_size = np.sum([np.prod(value.shape) for channel,planes in source.items() for plane,value in planes.items()])
+
+    # Generate memory-mapped files
+    print('Allocating space for aligned data...')
+    #orig_mmap_size = os.path.getsize(sbx.filename + '.sbx') // 2 // len(output_set)
+    mmap_size = source_size // len(output_set)
+
+    for output in output_set:
+        np.memmap(output, dtype='uint16', mode='w+', shape=mmap_size)
 
     # Reconstruct dictionary layout of data to match source
     sink = {channel: {} for channel in sbx.channels}
@@ -106,9 +114,14 @@ def generate_templates(sbx, start=20, stop=40):
     templates = {channel: {} for channel in sbx.channels}
     for channel,planes in sbx.data().items():
         for plane,value in planes.items():
-            templates[channel].update(
-                    {plane: value[start:stop].mean(0)}
-                    )
+            if not sbx.info['scanmode']:
+                templates[channel].update(
+                        {plane: value[start:stop,:,100:].mean(0)}
+                        )
+            else:
+                templates[channel].update(
+                        {plane: value[start:stop].mean(0)}
+                        )
     return templates
 
 def generate_indices(sbx, task_size=10):
