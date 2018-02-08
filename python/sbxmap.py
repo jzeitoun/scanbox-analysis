@@ -5,7 +5,7 @@ import os
 import shutil
 import re
 
-from statusbar import statusbar
+from statusbar import Statusbar
 from slicer import Slicer
 import loadmat as lmat
 
@@ -148,7 +148,7 @@ class sbxmap(object):
                      for idx_subset in idx_set]
 
             # write tiffs to file
-            status = statusbar(num_tasks)
+            status = Statusbar(num_tasks)
             print('Starting {} processes...'.format(num_cpu))
             pool = multiprocessing.Pool(num_cpu)
             print('Writing tiff...')
