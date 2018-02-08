@@ -22,7 +22,8 @@ class sbxmap(object):
     @property
     def shape(self):
         if self.num_planes > 1:
-            plane_length = len(np.arange(self.info['length'])[::self.num_planes])
+            plane_length = self.info['length'] // self.num_planes
+            #plane_length = len(np.arange(self.info['length'])[::self.num_planes])
             return (plane_length, self.info['sz'][0], self.info['sz'][1])
         else:
             return (self.info['length'], self.info['sz'][0], self.info['sz'][1])
