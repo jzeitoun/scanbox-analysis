@@ -1,6 +1,6 @@
 import sys
 
-class statusbar(object):
+class Statusbar(object):
     def __init__(self, num_tasks, barsize=50):
         self._barsize = barsize
         self._num_tasks = num_tasks

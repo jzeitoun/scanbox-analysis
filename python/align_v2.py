@@ -227,6 +227,7 @@ def main():
     setproctitle('moco')
     oldmask = os.umask(007)
     sbx = sbxmap(sys.argv[1])
+    print('Aligning {}.sbx'.format(sbx.filename))
 
     # Default arguments
     num_cpu = multiprocessing.cpu_count()

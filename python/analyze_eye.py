@@ -6,25 +6,29 @@ import math
 import os
 import sys
 
-def analyze_eye(filename,write=0):
+# Constants
+bounding_region = 25
+thresh_val = 240
+
+def analyze_eye(filename, write=0):
     '''
     Calculates pupil area and angular rotation  and saves data as .npy file.
     If write = 1, will also write out data with tracked pupil.
     '''
     # restricts pupil search to +/- this value from the center
     if 'eye2' in filename:
-        bounding_region = 25
+        #bounding_region = 25
         #thresh_val = 75
-        thresh_val = 200
+        #thresh_val = 200
         factor = -1
         pixels_per_mm = 195.0/4
     else:
-        bounding_region = 25
+        #bounding_region = 25
         #thresh_val = 44
-        thresh_val = 240
+        #thresh_val = 240
         factor = 1
         pixels_per_mm = 138.0/4
-    r_effective = 1.25 # radius of pupil to center of eyeball
+    #r_effective = 1.25 # radius of pupil to center of eyeball
     print 'Using threshold value of: ', thresh_val
 
     # read in eye data
