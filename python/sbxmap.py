@@ -177,7 +177,8 @@ def write(sbx, filename=None, _rows=None, _cols=None, indices=None):
                 tif_output[i,:,:,{'green':1, 'red':0}[channel]] = frame
     else: # use grayscale
         if len(sbx.channels) > 1:
-            channel = os.path.splitext(filename)[0].split('_')[-1]
+            #channel = os.path.splitext(filename)[0].split('_')[-3]
+            channel = [c for c in ['green','red'] if c in filename][0]
         else:
             channel = sbx.channels[0]
         tif_input = sbx.data()[channel][plane]
