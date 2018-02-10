@@ -10,7 +10,7 @@ from setproctitle import setproctitle
 import moco
 import loadmat as lmat
 from sbxmap import sbxmap
-from statusbar import statusbar
+from statusbar import Statusbar
 
 def generate_indices(sbx, task_size=10):
     depth, rows, cols = sbx.shape
@@ -106,7 +106,7 @@ def run_alignment(params, num_cpu=None):
         num_cpu = multiprocessing.cpu_count()
     print('Using moco alignment.') # modify for future alternative alignment scripts.
     print('Alignment using {} processes.'.format(num_cpu))
-    status = statusbar(len(params), 50)
+    status = Statusbar(len(params), 50)
     pool = multiprocessing.Pool(num_cpu) # spawning new processes after each task improves performance
     print('Aligning...')
     status.initialize()
@@ -255,7 +255,7 @@ if __name__ == '__main__':
                                  ]
                                )
         pool = multiprocessing.Pool(multiprocessing.cpu_count())
-        status = statusbar(len(apply_params))
+        status = Statusbar(len(apply_params))
         print('Applying translations to {} channel...'.format(channel))
         status.initialize()
         for i,_ in enumerate(pool.imap_unordered(kwargs_wrapper, apply_params), 1):
