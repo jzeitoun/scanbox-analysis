@@ -158,6 +158,14 @@ class sbxmap(object):
                 status.update(i)
             print('\nDone.')
 
+class Noop_sbxmap(sbxmap):
+    '''
+    Use this class when metadata incorrectly specifies optotune.
+    '''
+    @property
+    def num_planes(self):
+        return 1
+
 def kwargs_wrapper(kwargs):
     function, kwargs = kwargs
     function(**kwargs)
