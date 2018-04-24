@@ -21,26 +21,12 @@ import globe
 channel_options = ['green', 'red']
 channel_lookup = {'green': 2, 'red': 3}
 
-def rec_chmod(obj):
-    if isinstance(obj, dict):
-        for v in obj.values():
-            rec_chmod(v)
-    elif isinstance(obj, np.ndarray):
-        os.chmod(obj.filename, 
-
 def generate_output(sbx, split_chan=False, split_planes=True):
     '''
-    Generates set of memory-mapped files and the corresponding meta (.mat) files
-    to hold the aligned output. If data is to be separated during alignment,
-    separated files are reconstructed into dictionary layout that matches source
-    data layout (sbx.data()).
-
-    Returns as tuple containing the source data and sink data.
+    Generates dictionary of memory-mapped files organized by channel and plane.
     '''
     # Generate filenames based on input parameters
-    #outputs_by_channel = []
     output_set = {}
-    #if len(sbx.channels) > 1 and split_chan:
     for channel in sbx.channels:
         if split_chan:
             output_set[channel] = 'moco_aligned_{}_{}'.format(sbx.filename, channel)
@@ -76,20 +62,15 @@ def generate_output(sbx, split_chan=False, split_planes=True):
             spio.savemat(basename + '.mat', {'info':meta['info']})
             os.chmod(basename + '.mat', stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
 
+    # Generate memory-mapped files
+    print('Allocating space for aligned data...')
+
+    # Ugly method for calculating output file sizes, but it works
     rows,cols = sbx.info['sz']
     margin = 0
     if not sbx.info['scanmode']:
         cols = cols - 100
         margin = 100
-
-    source_size = np.prod(((sbx.info['length']+1) * len(sbx.channels), rows, cols))
-
-    # Generate memory-mapped files
-    print('Allocating space for aligned data...')
-    #orig_mmap_size = os.path.getsize(sbx.filename + '.sbx') // 2 // len(output_set)
-    mmap_size = source_size // len(output_set)
-
-    # Ugly method for calculating output file sizes, but it works
     filenames = []
     for channel, plane_data in output_set.items():
         for plane, filename in plane_data.items():
@@ -167,7 +148,7 @@ def generate_translations(sbx):
 
 def run_parallel(params, num_cpu):
     status = Statusbar(len(params), 50)
-    pool = multiprocessing.Pool(num_cpu) # spawning new processes after each task improves performance
+    pool = multiprocessing.Pool(num_cpu)
     status.initialize()
     for i,_ in enumerate(pool.imap_unordered(kwargs_wrapper, params), 1):
         status.update(i)
