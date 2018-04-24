@@ -3,6 +3,7 @@ import scipy.io as spio
 import multiprocessing
 import time
 import os
+import stat
 import sys
 import tempfile
 
@@ -11,6 +12,13 @@ import moco
 import loadmat as lmat
 from sbxmap import sbxmap
 from statusbar import Statusbar
+
+def rec_chmod(obj):
+    if isinstance(obj, dict):
+        for v in obj.values():
+            rec_chmod(v)
+    elif isinstance(obj, np.ndarray):
+        os.chmod(obj.filename, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
 
 def generate_indices(sbx, task_size=10):
     depth, rows, cols = sbx.shape
@@ -84,6 +92,8 @@ def generate_output(sbx, dimensions, plane_dimensions, channel='green', split=Tr
                                                                        shape=(plane_dimensions),
                                                                        mode=mode)
                                                                        })
+    # change permissions to 0744 for each file
+    rec_chmod(output_data_set)
     return output_data_set
 
 def save_mat(sbx, output_data_set, channel='green', split=True):
@@ -96,6 +106,8 @@ def save_mat(sbx, output_data_set, channel='green', split=True):
     for plane, output_data in output_data_set.items():
         spio_info['info']['sz'] = output_data.shape[1:]
         spio.savemat(os.path.splitext(output_data.filename)[0] + '.mat', {'info':spio_info['info']})
+        # change permissions to 0744 for each file
+        os.chmod(os.path.splitext(output_data.filename)[0] + '.mat', stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
 
 def kwargs_wrapper(kwargs):
     function, kwargs = kwargs
@@ -174,7 +186,7 @@ def generate_visual(filename, fmt='eps'):
 
 if __name__ == '__main__':
     setproctitle('moco')
-    oldmask = os.umask(007)
+    #oldmask = os.umask(007)
     filename = os.path.splitext(sys.argv[1])[0]
     num_cpu = None
     sbx = sbxmap(filename)

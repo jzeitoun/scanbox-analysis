@@ -158,13 +158,21 @@ class sbxmap(object):
                 status.update(i)
             print('\nDone.')
 
+class Noop_sbxmap(sbxmap):
+    '''
+    Use this class when metadata incorrectly specifies optotune.
+    '''
+    @property
+    def num_planes(self):
+        return 1
+
 def kwargs_wrapper(kwargs):
     function, kwargs = kwargs
     function(**kwargs)
 
 def write(sbx, filename=None, _rows=None, _cols=None, indices=None):
     tif_output = tif.tifffile.memmap(filename)
-    if 'plane' in filename:
+    if sbx.num_planes > 1 and 'plane' in filename:
         plane = re.findall('plane_[0-9]{1}', filename)[0]
     else:
         plane = 'plane_0'

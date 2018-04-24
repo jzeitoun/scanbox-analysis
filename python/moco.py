@@ -44,6 +44,7 @@ def find_z(cx, cy, cart, f_moving, f_template, Lx, Rx, Ly, Ry, xy, xy2, rows, co
     return newXY
 
 def validate_range(indices, max_idx):
+
     mask = indices < max_idx
     return indices[mask]
 
@@ -218,7 +219,7 @@ def align(
         input_data = input_data_set[plane]
         output_data = output_data_set[plane]
         plane_translations = translations_set[plane]
-        indices = validate_range(indices, input_data.shape[0])
+        indices = validate_range(np.array(indices), input_data.shape[0])
         if savemat == True:
             p = plane.split('_')[-1]
             print('Aligning plane {}/{}'.format(int(p)+1, sbx.num_planes))
@@ -269,8 +270,10 @@ def align(
             f_template = np.float64(template)
             xy = 2 * xy
 
+
             rows, cols = moving.shape
             cx = rows / 250
+            cx = 1 if not cx else cx # in case height is too short
             cy = cols / 150
             rx = np.float64(np.arange(cx))
             ry = np.float64(np.arange(cy))
