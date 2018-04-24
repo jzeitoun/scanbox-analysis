@@ -4,7 +4,7 @@ import multiprocessing
 import time
 import re
 import os
-import sys
+import stat
 import sys
 import tempfile
 
