@@ -5,6 +5,7 @@ import time
 import re
 import os
 import sys
+import sys
 import tempfile
 
 from setproctitle import setproctitle
@@ -19,6 +20,13 @@ import globe
 
 channel_options = ['green', 'red']
 channel_lookup = {'green': 2, 'red': 3}
+
+def rec_chmod(obj):
+    if isinstance(obj, dict):
+        for v in obj.values():
+            rec_chmod(v)
+    elif isinstance(obj, np.ndarray):
+        os.chmod(obj.filename, 
 
 def generate_output(sbx, split_chan=False, split_planes=True):
     '''
@@ -66,6 +74,7 @@ def generate_output(sbx, split_chan=False, split_planes=True):
                 meta['info']['resfreq'] = meta['info']['resfreq'] // sbx.num_planes
                 meta['info']['otparam'] = []
             spio.savemat(basename + '.mat', {'info':meta['info']})
+            os.chmod(basename + '.mat', stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
 
     rows,cols = sbx.info['sz']
     margin = 0
@@ -102,6 +111,7 @@ def generate_output(sbx, split_chan=False, split_planes=True):
         else:
             mmap_size = np.prod((cols, rows, sbx.info['length']*2))
         np.memmap(filename, dtype='uint16', mode='w+', shape=mmap_size)
+        os.chmod(filename, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
     return output_set
 
 def generate_templates(sbx, start=20, stop=40):
