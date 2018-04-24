@@ -11,7 +11,7 @@ from setproctitle import setproctitle
 import moco_v2
 import loadmat as lmat
 from sbxmap import sbxmap
-from statusbar import statusbar
+from statusbar import Statusbar
 
 import globe
 
@@ -30,79 +30,79 @@ def generate_output(sbx, split_chan=False, split_planes=True):
     Returns as tuple containing the source data and sink data.
     '''
     # Generate filenames based on input parameters
-    outputs_by_channel = []
-    if len(sbx.channels) > 1 and split_chan:
-        for channel in sbx.channels:
-            outputs_by_channel.append('moco_aligned_{}_{}'.format(sbx.filename, channel))
-    else:
-        outputs_by_channel.append('moco_aligned_{}'.format(sbx.filename))
+    #outputs_by_channel = []
+    output_set = {}
+    #if len(sbx.channels) > 1 and split_chan:
+    for channel in sbx.channels:
+        if split_chan:
+            output_set[channel] = 'moco_aligned_{}_{}'.format(sbx.filename, channel)
+        else:
+            output_set[channel] = 'moco_aligned_{}'.format(sbx.filename)
 
-    output_set = []
     if sbx.num_planes >1 and split_planes:
-        for output in outputs_by_channel:
+        for channel,output in output_set.items():
+            plane_set = {}
             for i in range(sbx.num_planes):
-                output_set.append(
-                        '{}_plane_{}.sbx'.format(output, i)
-                        )
+                plane_set['plane_{}'.format(i)] = '{}_plane_{}.sbx'.format(output, i)
+            output_set.update({channel: plane_set})
     else:
-        for output in outputs_by_channel:
-            output_set.append(
-                    '{}.sbx'.format(output)
+        for channel,output in output_set.items():
+            output_set.update(
+                    {channel: {'all': '{}.sbx'.format(output)}}
                     )
 
     # Generate metadata files (.mat)
     meta = lmat.loadmat(sbx.filename + '.mat')
-    for output in output_set:
-        basename = os.path.splitext(output)[0]
-        selected_channel = [channel for channel in channel_options if channel in basename]
-        if len(selected_channel):
-            channel = selected_channel[0]
-            meta['info']['channels'] = channel_lookup[channel]
-        if 'plane' in basename:
-            meta['info']['resfreq'] = meta['info']['resfreq'] // sbx.num_planes
-            meta['info']['otparam'] = []
-        if not meta['info']['scanmode']:
-            meta['info']['sz'][1] = meta['info']['sz'][1] - 100
-        spio.savemat(basename + '.mat', {'info':meta['info']})
-
-    # Crop source data if bidirectional
-    source = sbx.data()
-    if not sbx.info['scanmode']:
-        for channel,planes in source.items():
-            for plane,value in planes.items():
-                source[channel][plane] = value[:,:,100:]
+    if not meta['info']['scanmode']:
+        meta['info']['sz'][1] = meta['info']['sz'][1] - 100
+    for channel, plane_data in output_set.items():
+        for plane, filename in plane_data.items():
+            basename = os.path.splitext(filename)[0]
+            selected_channel = [ch for ch in channel_options if ch in basename]
+            if len(selected_channel):
+                channel = selected_channel[0]
+                meta['info']['channels'] = channel_lookup[channel]
+            if 'plane' in basename:
+                meta['info']['resfreq'] = meta['info']['resfreq'] // sbx.num_planes
+                meta['info']['otparam'] = []
+            spio.savemat(basename + '.mat', {'info':meta['info']})
 
     rows,cols = sbx.info['sz']
-    cols = cols - 100 if not sbx.info['scanmode'] else cols
+    margin = 0
+    if not sbx.info['scanmode']:
+        cols = cols - 100
+        margin = 100
 
-    source_size = np.prod((sbx.info['length'] * len(sbx.channels), rows, cols))
-    #source_size = np.sum([np.prod(value.shape) for channel,planes in source.items() for plane,value in planes.items()])
+    source_size = np.prod(((sbx.info['length']+1) * len(sbx.channels), rows, cols))
 
     # Generate memory-mapped files
     print('Allocating space for aligned data...')
     #orig_mmap_size = os.path.getsize(sbx.filename + '.sbx') // 2 // len(output_set)
     mmap_size = source_size // len(output_set)
 
-    for output in output_set:
-        np.memmap(output, dtype='uint16', mode='w+', shape=mmap_size)
-
-    # Reconstruct dictionary layout of data to match source
-    sink = {channel: {} for channel in sbx.channels}
-    for output in output_set:
-        output_sbx = sbxmap(output)
-        for channel in output_sbx.channels:
-            if 'plane' in output:
-                plane = re.search('plane_[0-9]{1,2}', output).group(0)
-                sink[channel].update(
-                        {plane: output_sbx.data()[channel]['plane_0']}
-                        )
+    # Ugly method for calculating output file sizes, but it works
+    filenames = []
+    for channel, plane_data in output_set.items():
+        for plane, filename in plane_data.items():
+            filenames.append(filename)
+    filenames = list(set(filenames))
+    for filename in filenames:
+        plane = re.findall('plane_[0-9]+', filename)
+        ch = [ch for ch in channel_options if ch in filename]
+        if len(ch):
+            ch = ch[0]
+            if len(plane):
+                plane = plane[0]
+                mmap_size = np.prod(sbx.data()[ch][plane][:,:,margin:].shape)
             else:
-                for i in range(sbx.num_planes):
-                    plane = 'plane_{}'.format(i)
-                    sink[channel].update(
-                            {plane: output_sbx.data()[channel][plane]}
-                            )
-    return source, sink, output_set
+                mmap_size = np.prod((cols, rows, sbx.info['length']))
+        elif len(plane):
+            plane = plane[0]
+            mmap_size = np.prod(sbx.data()[sbx.channels[0]][plane][:,:,margin:].shape)*2
+        else:
+            mmap_size = np.prod((cols, rows, sbx.info['length']*2))
+        np.memmap(filename, dtype='uint16', mode='w+', shape=mmap_size)
+    return output_set
 
 def generate_templates(sbx, start=20, stop=40):
     '''
@@ -131,8 +131,8 @@ def generate_indices(sbx, task_size=10):
 
     Returns chunked indices.
     '''
-    depth, rows, cols = sbx.shape
-    framesize = 2 * rows * cols
+    #depth, rows, cols = sbx.shape
+    #framesize = 2 * rows * cols
     all_indices = np.arange(sbx.shape[0])
     if isinstance(task_size, type(None)):
         max_tasks_per_process = all_indices.shape[0]
@@ -156,10 +156,17 @@ def generate_translations(sbx):
     return translations_file, translations_set
 
 def run_parallel(params, num_cpu):
-    status = statusbar(len(params), 50)
+    status = Statusbar(len(params), 50)
     pool = multiprocessing.Pool(num_cpu) # spawning new processes after each task improves performance
     status.initialize()
     for i,_ in enumerate(pool.imap_unordered(kwargs_wrapper, params), 1):
+        status.update(i)
+
+def run_serial(params_set):
+    status = Statusbar(len(params_set), 50)
+    status.initialize()
+    for i,params in enumerate(params_set, 1):
+        kwargs_wrapper(params)
         status.update(i)
 
 def kwargs_wrapper(kwargs):
@@ -230,7 +237,8 @@ def main():
     print('Aligning {}.sbx'.format(sbx.filename))
 
     # Default arguments
-    num_cpu = multiprocessing.cpu_count()
+    #num_cpu = multiprocessing.cpu_count() # logical
+    num_cpu = multiprocessing.cpu_count()/2 # physical
     align_channel = 'red'
     visualize = False
     w = 15
@@ -238,6 +246,10 @@ def main():
     split_planes = False
 
     # Parse user arguments
+    if '-serial' in sys.argv:
+        parallel = False
+    else:
+        parallel = True
     if '-num-cpu' in sys.argv:
         arg_idx = sys.argv.index('-num-cpu')
         num_cpu_arg = sys.argv[arg_idx + 1]
@@ -250,6 +262,7 @@ def main():
         align_channel_args = [arg for arg in sys.argv if arg in ['-to-green', '-to-red']]
         if len(align_channel_args):
             align_channel = align_channel_args[0].split('-')[-1]
+        print('Using {} channel for alignment.'.format(align_channel))
     else:
         align_channel = sbx.channels[0]
     if '-vis' in sys.argv:
@@ -269,31 +282,43 @@ def main():
         split_planes = True
 
     # Prepare output data
-    globe.source, globe.sink, filenames = generate_output(sbx, split_chan=split_chan, split_planes=split_planes)
-    globe.templates = generate_templates(sbx)
+    #source, sink, filenames = generate_output(sbx, split_chan=split_chan, split_planes=split_planes)
+    output_set = generate_output(sbx, split_chan=split_chan, split_planes=split_planes)
+    templates = generate_templates(sbx)
     translations_file, globe.translations = generate_translations(sbx)
+    #t_info = dict(filename=t_handle, dtype=t_handle.dtype, shape=t_handle.shape)
     index_set = generate_indices(sbx)
 
     # Package arguments to distribute across multiprocessing pool
     params_set = []
-    for indices in index_set:
-        params_set.append(
-                           [moco_v2.align,
-                             {
-                              'channel': align_channel,
-                              'indices': indices,
-                              'w': w
-                              }
-                            ]
-                          )
+    for plane, filename in output_set[align_channel].items():
+        for indices in index_set:
+            params_set.append(
+                               [moco_v2.align,
+                                 {
+                                  'source_name': sbx.filename + '.sbx',
+                                  'sink_name': filename,
+                                  'templates': templates,
+                                  'cur_plane': plane,
+                                  'channel': align_channel,
+                                  'indices': indices,
+                                  'w': w
+                                  }
+                                ]
+                              )
 
     # Align!
     print('Using moco alignment.')
-    print('Alignment using {} processes.'.format(num_cpu))
-    print('Aligning...')
     start = time.time()
 
-    run_parallel(params_set, num_cpu)
+    if not parallel: # run serially
+        print('Aligning serially.')
+        print('Aligning...')
+        run_serial(params_set)
+    else: # run in parallel
+        print('Alignment using {} processes.'.format(num_cpu))
+        print('Aligning...')
+        run_parallel(params_set, num_cpu)
 
     time_passed = time.time() - start
     print('\nFinished alignent in {:.3f} seconds. Alignment speed: {:.3f} frames/sec.'.format(time_passed, (sbx.shape[0]/time_passed)))
@@ -311,22 +336,33 @@ def main():
             apply_channel = 'red'
 
         apply_params_set = []
-        for indices in index_set:
-            apply_params_set.append(
-                               [moco_v2.apply_translations,
-                                 {
-                                  'channel': apply_channel,
-                                  'indices': indices,
-                                  }
-                                ]
-                              )
+        for plane, filename in output_set[apply_channel].items():
+            for indices in index_set:
+                apply_params_set.append(
+                                   [moco_v2.apply_translations,
+                                     {
+                                      'source_name': sbx.filename + '.sbx',
+                                      'sink_name': filename,
+                                      'cur_plane': plane,
+                                      'channel': apply_channel,
+                                      'indices': indices,
+                                      }
+                                    ]
+                                  )
 
         print('Applying translations to {} channel...'.format(apply_channel))
-        run_parallel(apply_params_set, num_cpu)
+        if not parallel: # run serially
+            run_serial(apply_params_set)
+        else: # run in parallel
+            run_parallel(apply_params_set, num_cpu)
 
     # Generate visualization of alignment
     if visualize:
         print('\nGenerating visualization of alignment.')
+        filenames = []
+        for channel, plane_data in output_set.items():
+            for plane, filename in plane_data.items():
+                filenames.append(filename)
         generate_visual(filenames)
         print('Done.')
 

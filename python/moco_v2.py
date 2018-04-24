@@ -14,6 +14,7 @@ import loadmat as lmat
 from sklearn.utils.extmath import cartesian
 
 import globe
+from sbxmap import sbxmap
 
 def computeT(tVals):
     t = tVals**2
@@ -49,29 +50,58 @@ def validate_range(indices, max_idx):
     mask = indices < max_idx
     return indices[mask]
 
-def apply_translations(channel, indices):
+def apply_translations(sink_name, source_name, cur_plane, channel, indices):
     # When running this script, it is assumed there is a global variable that contains
     # the translations to be applied (globe.translations).
-    for plane, plane_translations in globe.translations.items():
-        input_data = globe.source[channel][plane]
-        output_data = globe.sink[channel][plane]
+    source = sbxmap(source_name)
+    if not source.info['scanmode']:
+        margin = 100
+    else:
+        margin = 0
+
+    sink = sbxmap(sink_name)
+    if cur_plane == 'all':
+        planes = ['plane_{}'.format(i) for i in range(source.num_planes)]
+    else:
+        planes = [cur_plane]
+
+
+    for plane in planes:
+        plane_translations = globe.translations[plane]
+        input_data = source.data()[channel][plane][:,:,margin:]
+        output_data = sink.data()[channel][plane] if cur_plane == 'all' else sink.data()[channel]['plane_0']
         indices = validate_range(indices, input_data.shape[0])
         for idx in indices:
             moving = input_data[idx]
             rows,cols = moving.shape
-            _,x,y = plane_translations[idx]
+            s,x,y = plane_translations[idx]
             M = np.float32([[1,0,x], [0,1,y]])
             output_data[idx] = np.uint16(cv2.warpAffine(np.float32(moving), M, (cols,rows)))
 
 
-def align(channel, indices, w=15):
+def align(source_name, sink_name, templates, cur_plane, channel, indices, w=15):
+#def align(channel, indices, w=15):
     # "globe" is just a blank module that holds global variables (source, sink, templates, translations)
+
+    source = sbxmap(source_name)
+    if not source.info['scanmode']:
+        margin = 100
+    else:
+        margin = 0
+
+    sink = sbxmap(sink_name)
+    if cur_plane == 'all':
+        planes = ['plane_{}'.format(i) for i in range(source.num_planes)]
+    else:
+        planes = [cur_plane]
 
     setproctitle('moco-sub')
 
     # prepare template parameters for each plane
     template_params_set = {}
-    for plane, template in globe.templates[channel].items():
+    #for plane, template in templates[channel].items():
+    for plane in planes:
+        template = templates[channel][plane]
         ds_template = cv2.pyrDown(template)
         rows, cols = ds_template.shape
         temp = np.zeros([cols+w, rows+w])
@@ -97,14 +127,14 @@ def align(channel, indices, w=15):
 
     # iterate through each plane and align data
     for plane,tp in template_params_set.items():
-        input_data = globe.source[channel][plane]
-        output_data = globe.sink[channel][plane]
+        input_data = source.data()[channel][plane][:,:,margin:]
+        output_data = sink.data()[channel][plane] if cur_plane == 'default' else sink.data()[channel]['plane_0']
         plane_translations = globe.translations[plane]
         indices = validate_range(indices, input_data.shape[0])
         for idx in indices:
             moving = input_data[idx]
             ds_moving = cv2.pyrDown(moving)
-            rows, cols = ds_moving.shape
+            rows,cols = ds_moving.shape
 
             aVals = (ds_moving.T - ds_moving.mean()) / (ds_moving.std() * np.sqrt(2))
             aNew = computeT(aVals)
