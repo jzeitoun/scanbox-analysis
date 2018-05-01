@@ -271,6 +271,7 @@ def align(
 
             rows, cols = moving.shape
             cx = rows / 250
+            cx = 1 if cx < 1 else cx
             cy = cols / 150
             rx = np.float64(np.arange(cx))
             ry = np.float64(np.arange(cy))

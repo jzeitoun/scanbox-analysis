@@ -3,7 +3,7 @@ import scipy.io as spio
 import multiprocessing
 import time
 import os
-imoprt stat
+import stat
 import sys
 import tempfile
 
