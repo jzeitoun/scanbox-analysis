@@ -49,6 +49,7 @@ def generate_output(sbx, split_chan=False, split_planes=True):
     meta = lmat.loadmat(sbx.filename + '.mat')
     if not meta['info']['scanmode']:
         meta['info']['sz'][1] = meta['info']['sz'][1] - 100
+        meta['info']['resfreq'] = meta['info']['resfreq'] // sbx.num_planes
     for channel, plane_data in output_set.items():
         for plane, filename in plane_data.items():
             basename = os.path.splitext(filename)[0]
@@ -57,7 +58,6 @@ def generate_output(sbx, split_chan=False, split_planes=True):
                 channel = selected_channel[0]
                 meta['info']['channels'] = channel_lookup[channel]
             if 'plane' in basename:
-                meta['info']['resfreq'] = meta['info']['resfreq'] // sbx.num_planes
                 meta['info']['otparam'] = []
             spio.savemat(basename + '.mat', {'info':meta['info']})
             os.chmod(basename + '.mat', stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
@@ -180,6 +180,10 @@ def generate_visual(filenames, fmt='eps'):
         depth,rows,cols = sbx.shape
         for channel,channel_data in sbx.data().items():
             for plane,data in channel_data.items():
+                if channel == 'red':
+
+                    import ipdb; ipdb.set_trace()
+
                 XT = np.mean(~sbx.data()[channel][plane][:,:,(cols//2)-20:(cols//2)+20],2).T
 
                 # Get max and min pixel values (excluding "false black translation pixels") for proper scaling
