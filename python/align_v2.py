@@ -47,9 +47,9 @@ def generate_output(sbx, split_chan=False, split_planes=True):
 
     # Generate metadata files (.mat)
     meta = lmat.loadmat(sbx.filename + '.mat')
+    meta['info']['resfreq'] = meta['info']['resfreq'] // sbx.num_planes
     if not meta['info']['scanmode']:
         meta['info']['sz'][1] = meta['info']['sz'][1] - 100
-        meta['info']['resfreq'] = meta['info']['resfreq'] // sbx.num_planes
     for channel, plane_data in output_set.items():
         for plane, filename in plane_data.items():
             basename = os.path.splitext(filename)[0]
