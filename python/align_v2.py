@@ -95,7 +95,7 @@ def generate_output(sbx, split_chan=False, split_planes=True):
         os.chmod(filename, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
     return output_set
 
-def generate_templates(sbx, start=20, stop=40):
+def generate_templates(sbx, method=np.mean, start=20, stop=40):
     '''
     Generates a template for each plane of each channel. Maintains same dictionary
     layout as sbx.data().
@@ -107,12 +107,21 @@ def generate_templates(sbx, start=20, stop=40):
         for plane,value in planes.items():
             if not sbx.info['scanmode']:
                 templates[channel].update(
-                        {plane: value[start:stop,:,100:].mean(0)}
+                        {plane: method(value[start:stop,:,100:], 0)}
                         )
+                if method == np.sum:
+                    template = templates[channel][plane]
+                    uint16_template = np.uint16((template*65535/float(template.max())))
+                    templates[channel][plane] = uint16_template
             else:
                 templates[channel].update(
-                        {plane: value[start:stop].mean(0)}
+                        {plane: method(value[start:stop], 0)}
                         )
+                if method == np.sum:
+                    template = templates[channel][plane]
+                    uint16_template = np.uint16((template*65535/float(template.max())))
+                    templates[channel][plane] = uint16_template
+
     return templates
 
 def generate_indices(sbx, task_size=10):
@@ -237,6 +246,9 @@ def main():
     align_channel = 'red'
     visualize = False
     w = 15
+    t_start = 20
+    t_stop = 40
+    t_method = np.mean
     split_chan = False
     split_planes = False
 
@@ -275,11 +287,34 @@ def main():
         split_chan = True
     if '-split-plane' in sys.argv:
         split_planes = True
+    if '-t-range' in sys.argv:
+        t_range_idx = sys.argv.index('-t-range')
+        t_start = sys.argv[t_range_idx + 1]
+        t_stop = sys.argv[t_range_idx + 2]
+        try:
+            t_start = int(t_start)
+            t_stop = int(t_stop)
+            print('Templates will use range {} - {}.'.format(t_start, t_stop))
+        except:
+            raise ValueError('Template indices must be integers.')
+    if '-t-method' in sys.argv:
+        method_lookup = {
+                    'mean': np.mean,
+                    'max': np.max,
+                    'sum': np.sum
+                    }
+        try:
+            method_idx = sys.argv.index('-t-method')
+            t_method = method_lookup[sys.argv[method_idx + 1]]
+            print('Template generation will use {}.'.format(sys.argv[method_idx + 1]))
+        except:
+            raise ValueError('Template method must be "mean", "max" or "sum".')
+
 
     # Prepare output data
     #source, sink, filenames = generate_output(sbx, split_chan=split_chan, split_planes=split_planes)
     output_set = generate_output(sbx, split_chan=split_chan, split_planes=split_planes)
-    templates = generate_templates(sbx)
+    templates = generate_templates(sbx, method=t_method, start=t_start, stop=t_stop)
     translations_file, globe.translations = generate_translations(sbx)
     #t_info = dict(filename=t_handle, dtype=t_handle.dtype, shape=t_handle.shape)
     index_set = generate_indices(sbx)
