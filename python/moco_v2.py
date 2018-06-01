@@ -50,6 +50,31 @@ def validate_range(indices, max_idx):
     mask = indices < max_idx
     return indices[mask]
 
+
+def apply_plane_translations(source_name, sink_name, channel, plane_to_align, align_plane, translations):
+    '''
+    Apply the translations from one plane to another plane. Sink name must be a
+    single plane.
+    '''
+    source = sbxmap(source_name)
+    if not source.info['scanmode']:
+        margin = 100
+    else:
+        margin = 0
+
+    sink = sbxmap(sink_name)
+
+    plane_translations = translations['plane_' + align_plane]
+    input_data = source.data()[channel]['plane_' + plane_to_align][:,:,margin:]
+    output_data = sink.data()[channel]['plane_0']
+    for idx in range(input_data.shape[0]):
+        moving = input_data[idx]
+        rows,cols = moving.shape
+        s,x,y = plane_translations[idx]
+        M = np.float32([[1,0,x], [0,1,y]])
+        output_data[idx] = np.uint16(cv2.warpAffine(np.float32(moving), M, (cols,rows)))
+        yield idx
+
 def apply_translations(sink_name, source_name, cur_plane, channel, indices):
     # When running this script, it is assumed there is a global variable that contains
     # the translations to be applied (globe.translations).

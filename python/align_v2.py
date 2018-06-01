@@ -234,7 +234,7 @@ def generate_visual(filenames, fmt='eps'):
         plt.plot(y)
         yfig.savefig('{}_{}_y.{}'.format(common_basename, plane, fmt))
 
-def main():
+def run():
     setproctitle('moco')
     oldmask = os.umask(007)
     sbx = sbxmap(sys.argv[1])
@@ -395,6 +395,15 @@ def main():
                 filenames.append(filename)
         generate_visual(filenames)
         print('Done.')
+
+def main():
+    if '-debug' in sys.argv:
+        from ipdb import launch_ipdb_on_exception
+        sys.argv.append('-serial')
+        with launch_ipdb_on_exception():
+            run()
+    else:
+        run()
 
 if __name__ == '__main__':
     main()
