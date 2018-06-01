@@ -153,7 +153,7 @@ def align(source_name, sink_name, templates, cur_plane, channel, indices, w=15):
     # iterate through each plane and align data
     for plane,tp in template_params_set.items():
         input_data = source.data()[channel][plane][:,:,margin:]
-        output_data = sink.data()[channel][plane] if cur_plane == 'default' else sink.data()[channel]['plane_0']
+        output_data = sink.data()[channel][plane] if cur_plane == 'all' else sink.data()[channel]['plane_0']
         plane_translations = globe.translations[plane]
         indices = validate_range(indices, input_data.shape[0])
         for idx in indices:
