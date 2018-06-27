@@ -5,7 +5,7 @@ import sys
 import os
 
 from pacu.core.io.scanbox.impl2 import ScanboxIO
-from pacu.core.io.scanbox.method.dff0 import get_trial_indices
+from pacu.core.io.scanbox.method.trial.dff0 import get_trial_indices
 
 '''
 File must have only one workspace for this script to work.
