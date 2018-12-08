@@ -183,7 +183,6 @@ def generate_visual(filenames, fmt='eps'):
         1. A plot of translation vs time for both x and y for each plane.
         2. A set of X-T and Y-T slices for each plane.
     '''
-    import ipdb; ipdb.set_trace() 
     common_basename = '_'.join(filenames[0].split('.')[0].split('_'))
     translations = np.load('{}_translations.npy'.format(common_basename)).tolist()
 
@@ -356,7 +355,7 @@ def run():
     # Save translations to disk
     fpath = os.path.dirname(sbx.filename)
     filename = os.path.basename(sbx.filename)
-    translations_filename = os.path.join(fpath, 'moco_aligned_{}_translations'.format(fpath, filename))
+    translations_filename = os.path.join(fpath, 'moco_aligned_{}_translations'.format(filename))
     np.save(translations_filename, globe.translations)
     translations_file.close()
 
@@ -406,7 +405,7 @@ def main():
         raw     = [os.path.join(root, fn) for root, dirs, files in os.walk(os.getcwd()) for fn in files if fn.endswith('.sbx') and 'moco_aligned_' not in fn]  
         aligned = [os.path.join(root, fn) for root, dirs, files in os.walk(os.getcwd()) for fn in files if fn.endswith('.sbx') and 'moco_aligned_' in fn]   
     else:
-        raw = [sys.argv[1]]
+        raw 	= [sys.argv[1]]
         aligned = []
 
     if '-ignore' in sys.argv: # do not align files with an associated moco aligned file
