@@ -94,13 +94,8 @@ def generate_output(sbx, split_chan=False, split_planes=True):
             mmap_size = np.prod(sbx.data()[sbx.channels[0]][plane][:,:,margin:].shape)*2
         else:
             mmap_size = np.prod((cols, rows, sbx.info['length']*sbx.info['nChan']))
-<<<<<<< HEAD
-        np.memmap(filename, dtype='uint16', mode='w+', shape=mmap_size)
-        os.chmod(filename, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
-=======
         np.memmap(fn, dtype='uint16', mode='w+', shape=mmap_size)
         os.chmod(fn, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
->>>>>>> 6787ec7a28750f37ef365ac8021670745735f3c8
     return output_set
 
 def generate_templates(sbx, method=np.mean, start=20, stop=40):
@@ -197,12 +192,6 @@ def generate_visual(filenames, fmt='eps'):
         depth,rows,cols = sbx.shape
         for channel,channel_data in sbx.data().items():
             for plane,data in channel_data.items():
-<<<<<<< HEAD
-=======
-                if channel == 'red':
-                    import ipdb; ipdb.set_trace()
-
->>>>>>> 6787ec7a28750f37ef365ac8021670745735f3c8
                 XT = np.mean(~sbx.data()[channel][plane][:,:,(cols//2)-20:(cols//2)+20],2).T
 
                 # Get max and min pixel values (excluding "false black translation pixels") for proper scaling
