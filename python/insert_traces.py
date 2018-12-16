@@ -29,7 +29,7 @@ def connect_db(io_filename):
     io = ScanboxIO(path)
     return io
 
-def insert_traces(rois, io):
+def insert_traces(io, rois):
     '''
     Updates each of the trial "dttrialdff0s" objects with the corresponding segment
     of the custom trace.
@@ -53,7 +53,7 @@ def main():
     io = connect_db(sys.argv[2])
 
     print('Inserting traces...')
-    insert_traces(rois, io)
+    insert_traces(io, rois)
 
     print('Done.')
 

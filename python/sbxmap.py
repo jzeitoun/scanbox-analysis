@@ -134,6 +134,7 @@ class sbxmap(object):
                 rgb = False # single channel file
 
         for filename in filenames: # create memory-mapped tiffs
+
             print('Allocating space for tiff file: {}'.format(filename))
             tif.tifffile.memmap(filename,
                                 shape=tuple([_depth.length, _rows.length, _cols.length] + {True:[3], False:[]}[rgb]),
@@ -170,7 +171,7 @@ def kwargs_wrapper(kwargs):
     function, kwargs = kwargs
     function(**kwargs)
 
-def write(sbx, filename=None, _rows=None, _cols=None, indices=None):
+def write(sbx, filename=None, _depth=None, _rows=None, _cols=None, indices=None):
     tif_output = tif.tifffile.memmap(filename)
     if sbx.num_planes > 1 and 'plane' in filename:
         plane = re.findall('plane_[0-9]{1}', filename)[0]

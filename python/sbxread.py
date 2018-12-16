@@ -87,7 +87,7 @@ def sbxmap(filename):
         return mapped_data
     
     else:
-        print 'Data contains 2 channels, will return 1 mapped object for each channel.'
+        print ('Data contains 2 channels, will return 1 mapped object for each channel.')
         mapped_data = np.memmap(filename + '.sbx',dtype='uint16')
         green_data = mapped_data[::2].reshape(info['length'],info['sz'][0],info['sz'][1])
         red_data = mapped_data[1::2].reshape(info['length'],info['sz'][0],info['sz'][1])
