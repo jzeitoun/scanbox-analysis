@@ -192,9 +192,6 @@ def generate_visual(filenames, fmt='eps'):
         depth,rows,cols = sbx.shape
         for channel,channel_data in sbx.data().items():
             for plane,data in channel_data.items():
-                if channel == 'red':
-                    import ipdb; ipdb.set_trace()
-
                 XT = np.mean(~sbx.data()[channel][plane][:,:,(cols//2)-20:(cols//2)+20],2).T
 
                 # Get max and min pixel values (excluding "false black translation pixels") for proper scaling

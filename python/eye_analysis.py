@@ -8,7 +8,7 @@ import sys
 
 # Constants
 bounding_region = 30 # Default: 30
-thresh_val = 220 # Default: 230
+thresh_val = 50 # Default: 230
 lower_area_limit = 100 # Default: 100
 upper_area_limit = 25000 # Default: 25000
 circ_score_thresh = 1.55 # Default: 1.55
