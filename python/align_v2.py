@@ -61,7 +61,7 @@ def generate_output(sbx, split_chan=False, split_planes=True):
                 meta['info']['channels'] = channel_lookup[channel]
             if 'plane' in basename:
                 meta['info']['otparam'] = []
-                
+
             spio.savemat(basename + '.mat', {'info':meta['info']})
             os.chmod(basename + '.mat', stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
 
@@ -159,7 +159,7 @@ def generate_translations(sbx):
     return translations_file, translations_set
 
 def run_parallel(params, num_cpu):
-    status = Statusbar(len(params), 50)
+    status = Statusbar(len(params), barsize=50)
     pool = multiprocessing.Pool(num_cpu)
     status.initialize()
     for i,_ in enumerate(pool.imap_unordered(kwargs_wrapper, params), 1):

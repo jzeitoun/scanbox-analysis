@@ -33,6 +33,11 @@ class sbxmap(object):
         # Fixes issue when using uint16 for memmapping
         _info['sz'] = _info['sz'].tolist()
         # Defining number of channels/size factor
+        if _info['channels'] == -1:
+            if _info['chan']['nchan'] == 2:
+                _info['nChan'] = 2; factor = 1
+            else:
+                _info['nChan'] = 1; factor = 2
         if _info['channels'] == 1:
             _info['nChan'] = 2; factor = 1
         elif _info['channels'] == 2:
@@ -53,6 +58,14 @@ class sbxmap(object):
         return _info
     @property
     def channels(self):
+        if self.info['channels'] == -1:
+            sample = self.info['chan']['sample'][:2]
+            if sample[0] and sample[1]:
+                return ['green', 'red']
+            if sample[0] and not sample[1]:
+                return ['green']
+            if not sample[0] and sample[1]:
+                return['red']
         if self.info['channels'] == 1:
             return ['green', 'red']
         elif self.info['channels'] == 2:
