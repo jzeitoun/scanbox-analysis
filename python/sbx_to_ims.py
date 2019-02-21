@@ -19,6 +19,7 @@ def main():
     sbx = sbxmap(sys.argv[1])
     ims = h5py.File(sbx.filename + '.ims', 'w')
 
+
     # Parse sbx data into TCZYX form.
     depth, height, width = sbx.shape
 
