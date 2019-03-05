@@ -33,6 +33,11 @@ class sbxmap(object):
         # Fixes issue when using uint16 for memmapping
         _info['sz'] = _info['sz'].tolist()
         # Defining number of channels/size factor
+        if _info['channels'] == -1:
+            if _info['chan']['nchan'] == 2:
+                _info['nChan'] = 2; factor = 1
+            else:
+                _info['nChan'] = 1; factor = 2
         if _info['channels'] == 1:
             _info['nChan'] = 2; factor = 1
         elif _info['channels'] == 2:
@@ -53,6 +58,14 @@ class sbxmap(object):
         return _info
     @property
     def channels(self):
+        if self.info['channels'] == -1:
+            sample = self.info['chan']['sample'][:2]
+            if sample[0] and sample[1]:
+                return ['green', 'red']
+            if sample[0] and not sample[1]:
+                return ['green']
+            if not sample[0] and sample[1]:
+                return['red']
         if self.info['channels'] == 1:
             return ['green', 'red']
         elif self.info['channels'] == 2:
@@ -134,10 +147,12 @@ class sbxmap(object):
                 rgb = False # single channel file
 
         for filename in filenames: # create memory-mapped tiffs
+
             print('Allocating space for tiff file: {}'.format(filename))
             tif.tifffile.memmap(filename,
                                 shape=tuple([_depth.length, _rows.length, _cols.length] + {True:[3], False:[]}[rgb]),
-                                dtype={True:'uint8', False:'uint16'}[rgb])
+                                dtype={True:'uint8', False:'uint16'}[rgb],
+                                bigtiff=True)
             params = [
                        [write,
                          {'sbx': self,
@@ -170,7 +185,7 @@ def kwargs_wrapper(kwargs):
     function, kwargs = kwargs
     function(**kwargs)
 
-def write(sbx, filename=None, _rows=None, _cols=None, indices=None):
+def write(sbx, filename=None, _depth=None, _rows=None, _cols=None, indices=None):
     tif_output = tif.tifffile.memmap(filename)
     if sbx.num_planes > 1 and 'plane' in filename:
         plane = re.findall('plane_[0-9]{1}', filename)[0]

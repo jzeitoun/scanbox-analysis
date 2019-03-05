@@ -27,12 +27,14 @@ def generate_output(sbx, split_chan=False, split_planes=True):
     '''
     # Generate filenames based on input parameters
     output_set = {}
+    fpath = os.path.dirname(sbx.filename)
+    filename = os.path.basename(sbx.filename)    
     for channel in sbx.channels:
+        
         if split_chan:
-            output_set[channel] = 'moco_aligned_{}_{}'.format(sbx.filename, channel)
+            output_set[channel] = os.path.join(fpath, 'moco_aligned_{}_{}'.format(filename, channel))
         else:
-            output_set[channel] = 'moco_aligned_{}'.format(sbx.filename)
-
+            output_set[channel] = os.path.join(fpath, 'moco_aligned_{}'.format(filename))
     if sbx.num_planes >1 and split_planes:
         for channel,output in output_set.items():
             plane_set = {}
@@ -51,14 +53,15 @@ def generate_output(sbx, split_chan=False, split_planes=True):
     if not meta['info']['scanmode']:
         meta['info']['sz'][1] = meta['info']['sz'][1] - 100
     for channel, plane_data in output_set.items():
-        for plane, filename in plane_data.items():
-            basename = os.path.splitext(filename)[0]
+        for plane, fn in plane_data.items():
+            basename = os.path.splitext(fn)[0]
             selected_channel = [ch for ch in channel_options if ch in basename]
             if len(selected_channel):
                 channel = selected_channel[0]
                 meta['info']['channels'] = channel_lookup[channel]
             if 'plane' in basename:
                 meta['info']['otparam'] = []
+
             spio.savemat(basename + '.mat', {'info':meta['info']})
             os.chmod(basename + '.mat', stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
 
@@ -73,12 +76,12 @@ def generate_output(sbx, split_chan=False, split_planes=True):
         margin = 100
     filenames = []
     for channel, plane_data in output_set.items():
-        for plane, filename in plane_data.items():
-            filenames.append(filename)
+        for plane, fn in plane_data.items():
+            filenames.append(fn)
     filenames = list(set(filenames))
-    for filename in filenames:
-        plane = re.findall('plane_[0-9]+', filename)
-        ch = [ch for ch in channel_options if ch in filename]
+    for fn in filenames:
+        plane = re.findall('plane_[0-9]+', fn)
+        ch = [ch for ch in channel_options if ch in fn]
         if len(ch):
             ch = ch[0]
             if len(plane):
@@ -90,9 +93,9 @@ def generate_output(sbx, split_chan=False, split_planes=True):
             plane = plane[0]
             mmap_size = np.prod(sbx.data()[sbx.channels[0]][plane][:,:,margin:].shape)*2
         else:
-            mmap_size = np.prod((cols, rows, sbx.info['length']*2))
-        np.memmap(filename, dtype='uint16', mode='w+', shape=mmap_size)
-        os.chmod(filename, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
+            mmap_size = np.prod((cols, rows, sbx.info['length']*sbx.info['nChan']))
+        np.memmap(fn, dtype='uint16', mode='w+', shape=mmap_size)
+        os.chmod(fn, stat.S_IRWXU | stat.S_IRGRP | stat.S_IROTH)
     return output_set
 
 def generate_templates(sbx, method=np.mean, start=20, stop=40):
@@ -156,7 +159,7 @@ def generate_translations(sbx):
     return translations_file, translations_set
 
 def run_parallel(params, num_cpu):
-    status = Statusbar(len(params), 50)
+    status = Statusbar(len(params), barsize=50)
     pool = multiprocessing.Pool(num_cpu)
     status.initialize()
     for i,_ in enumerate(pool.imap_unordered(kwargs_wrapper, params), 1):
@@ -189,10 +192,6 @@ def generate_visual(filenames, fmt='eps'):
         depth,rows,cols = sbx.shape
         for channel,channel_data in sbx.data().items():
             for plane,data in channel_data.items():
-                if channel == 'red':
-
-                    import ipdb; ipdb.set_trace()
-
                 XT = np.mean(~sbx.data()[channel][plane][:,:,(cols//2)-20:(cols//2)+20],2).T
 
                 # Get max and min pixel values (excluding "false black translation pixels") for proper scaling
@@ -237,11 +236,10 @@ def generate_visual(filenames, fmt='eps'):
 def run():
     setproctitle('moco')
     oldmask = os.umask(007)
-    sbx = sbxmap(sys.argv[1])
+    sbx = sbxmap(sys.argv[0])
     print('Aligning {}.sbx'.format(sbx.filename))
 
     # Default arguments
-    #num_cpu = multiprocessing.cpu_count() # logical
     num_cpu = multiprocessing.cpu_count()/2 # physical
     align_channel = 'red'
     visualize = False
@@ -312,22 +310,20 @@ def run():
 
 
     # Prepare output data
-    #source, sink, filenames = generate_output(sbx, split_chan=split_chan, split_planes=split_planes)
     output_set = generate_output(sbx, split_chan=split_chan, split_planes=split_planes)
     templates = generate_templates(sbx, method=t_method, start=t_start, stop=t_stop)
     translations_file, globe.translations = generate_translations(sbx)
-    #t_info = dict(filename=t_handle, dtype=t_handle.dtype, shape=t_handle.shape)
     index_set = generate_indices(sbx)
 
     # Package arguments to distribute across multiprocessing pool
     params_set = []
-    for plane, filename in output_set[align_channel].items():
+    for plane, fn in output_set[align_channel].items():
         for indices in index_set:
             params_set.append(
                                [moco_v2.align,
                                  {
                                   'source_name': sbx.filename + '.sbx',
-                                  'sink_name': filename,
+                                  'sink_name': fn,
                                   'templates': templates,
                                   'cur_plane': plane,
                                   'channel': align_channel,
@@ -354,7 +350,9 @@ def run():
     print('\nFinished alignent in {:.3f} seconds. Alignment speed: {:.3f} frames/sec.'.format(time_passed, (sbx.shape[0]/time_passed)))
 
     # Save translations to disk
-    translations_filename = 'moco_aligned_{}_translations'.format(sbx.filename)
+    fpath = os.path.dirname(sbx.filename)
+    filename = os.path.basename(sbx.filename)
+    translations_filename = os.path.join(fpath, 'moco_aligned_{}_translations'.format(filename))
     np.save(translations_filename, globe.translations)
     translations_file.close()
 
@@ -366,13 +364,13 @@ def run():
             apply_channel = 'red'
 
         apply_params_set = []
-        for plane, filename in output_set[apply_channel].items():
+        for plane, fn in output_set[apply_channel].items():
             for indices in index_set:
                 apply_params_set.append(
                                    [moco_v2.apply_translations,
                                      {
                                       'source_name': sbx.filename + '.sbx',
-                                      'sink_name': filename,
+                                      'sink_name': fn,
                                       'cur_plane': plane,
                                       'channel': apply_channel,
                                       'indices': indices,
@@ -391,19 +389,40 @@ def run():
         print('\nGenerating visualization of alignment.')
         filenames = []
         for channel, plane_data in output_set.items():
-            for plane, filename in plane_data.items():
-                filenames.append(filename)
+            for plane, fn in plane_data.items():
+                filenames.append(fn)
         generate_visual(filenames)
         print('Done.')
 
-def main():
-    if '-debug' in sys.argv:
-        from ipdb import launch_ipdb_on_exception
-        sys.argv.append('-serial')
-        with launch_ipdb_on_exception():
-            run()
+def main():  
+    if '-a' in sys.argv: # aligns all files in current directory
+        raw     = [fn for fn in os.listdir('.') if fn.endswith('.sbx') and 'moco_aligned_' not in fn]
+        aligned = [fn for fn in os.listdir('.') if fn.endswith('.sbx') and 'moco_aligned_' in fn]
+    elif '-r' in sys.argv: # aligns all files in current directory recursivly
+        raw     = [os.path.join(root, fn) for root, dirs, files in os.walk(os.getcwd()) for fn in files if fn.endswith('.sbx') and 'moco_aligned_' not in fn]  
+        aligned = [os.path.join(root, fn) for root, dirs, files in os.walk(os.getcwd()) for fn in files if fn.endswith('.sbx') and 'moco_aligned_' in fn]   
     else:
-        run()
+        raw 	= [sys.argv[1]]
+        aligned = []
 
+    if '-ignore' in sys.argv: # do not align files with an associated moco aligned file
+        initial = len(raw)
+        aligned = [a.replace('moco_aligned_', '') for a in aligned]
+        raw = [f for a in aligned for f in raw if f not in a]
+        print ('{} of {} sbx files to be converted'.format(len(raw),initial))  
+    if not raw:
+        raise ValueError('sbx file not defined or no files found in current directory.')
+
+    print('Batch processing: {} sbx files'.format(len(raw)))
+    for i,f in enumerate(raw):
+        print('Aligning file {} of {}'.format(i+1, len(raw)))
+        sys.argv[0] = f # messy way because run() only knows which file by position in sys.argv
+        if '-debug' in sys.argv:
+            from ipdb import launch_ipdb_on_exception
+            sys.argv.append('-serial')
+            with launch_ipdb_on_exception():
+                run() 
+        else:
+            run()
 if __name__ == '__main__':
     main()
