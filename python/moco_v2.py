@@ -130,6 +130,10 @@ def align(source_name, sink_name, templates, cur_plane, channel, indices, w=15):
         ds_template = cv2.pyrDown(template)
         rows, cols = ds_template.shape
         temp = np.zeros([cols+w, rows+w])
+        ds_template_mean = ds_template.mean()
+        if ds_template_mean == 0:
+            print('All template frames are blank. Please select new indices for template.')
+            return
         tVals = (ds_template.T - ds_template.mean()) / (ds_template.std() * np.sqrt(2))
         tNew = computeT(tVals)
         newTVals = tVals[::-1,:]
@@ -158,6 +162,10 @@ def align(source_name, sink_name, templates, cur_plane, channel, indices, w=15):
         indices = validate_range(indices, input_data.shape[0])
         for idx in indices:
             moving = input_data[idx]
+            # Check for blank frams
+            if moving.max() == 0:
+                print('Frame {} is blank. Skipping frame.'.format(idx))
+                continue
             ds_moving = cv2.pyrDown(moving)
             rows,cols = ds_moving.shape
 
