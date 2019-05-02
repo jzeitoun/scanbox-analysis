@@ -151,7 +151,8 @@ class sbxmap(object):
             print('Allocating space for tiff file: {}'.format(filename))
             tif.tifffile.memmap(filename,
                                 shape=tuple([_depth.length, _rows.length, _cols.length] + {True:[3], False:[]}[rgb]),
-                                dtype={True:'uint8', False:'uint16'}[rgb])
+                                dtype={True:'uint8', False:'uint16'}[rgb],
+                                bigtiff=True)
             params = [
                        [write,
                          {'sbx': self,

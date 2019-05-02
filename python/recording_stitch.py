@@ -17,7 +17,7 @@ class stitched_data(object):
     Argument should be list of tuples with the filename first and the workspace name second.
     Example: stitched_dataset = stitched_data([('Day1_000_000','Workspace_1'),('Day1_000_001',Workspace_1')])
     '''
-    def __init__(self,fw_array):
+    def __init__(self, fw_array, recompute=False):
         self.fw_array = fw_array
         self.path = os.getcwd()
         self.io = [ScanboxIO(os.path.join(self.path,fw[0])) for fw in self.fw_array]
@@ -25,8 +25,10 @@ class stitched_data(object):
         self.workspaces = [workspace for data,fw in zip(self.io, self.fw_array) for workspace in data.condition.workspaces if workspace.name == fw[1]]
         self.rois = self.find_matched_rois()
         #self.merged_rois = [TrialMergedROIView(roi.id,*self.workspaces) for roi in self.rois[0]]
-        self.merged_rois = [TrialMergedROIView((roi.params.cell_id or roi.id), *self.workspaces) for roi in self.rois[0]]
-        self.refresh_all()
+        self.merged_rois = [TrialMergedROIView((roi.params.cell_id or roi.id), *self.workspaces) for roi in self.rois[0] if roi.dtoverallmean.value]
+        # shitty fix
+        if recompute:
+            self.refresh_all()
         #self.roi_dict = {'{}{}'.format('id_',merged_roi.rois[0].id):merged_roi.serialize() for merged_roi in self.merged_rois}
         self.roi_dict = {'{}{}'.format('cell_id_', merged_roi.rois[0].params.cell_id):merged_roi.serialize() for merged_roi in self.merged_rois}
         #self.sftp = self.create_SFTP()
@@ -193,9 +195,12 @@ class stitched_data(object):
             cell.value = val
             cell.style = header
 
-        for idx,roi in zip(idx_list,self.merged_rois):
+        for idx,roi in zip(idx_list, self.merged_rois):
             #if any([anovaeach.p < p_value for anovaeach in roi.dtanovaeachs]):
             peak_sf = round(roi.dtsfreqfits[0].attributes['value']['peak'],2)
+
+            roi_id = int(roi.rois[0].params.cell_id) or roi.roi[0].id
+
             try:
                 if roi.dtanovaeachs.filter_by(trial_sf=peak_sf)[0].p <= p_value:
                     style = sig_cell
@@ -208,7 +213,7 @@ class stitched_data(object):
                 for top,bottom in zip(ws['A{}:I{}'.format(idx,idx)][0],ws['A{}:I{}'.format(idx+num_sf-1,idx+num_sf-1)][0]):
                     ws.merge_cells('{}{}:{}{}'.format(top.column,top.row,bottom.column,bottom.row))
 
-                ws.cell(row=idx,column=1).value = int(roi.rois[0].params.cell_id)
+                ws.cell(row=idx,column=1).value = roi_id
                 ws.cell(row=idx,column=1).style = style
                 ws.cell(row=idx,column=2).value = roi.dtanovaalls.first.attributes['value']['f']
                 ws.cell(row=idx,column=2).style = style
@@ -218,7 +223,7 @@ class stitched_data(object):
                     ws.cell(row=idx,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
                     ws.cell(row=idx,column=5).value = roi.dtsfreqfits.first.attributes['value']['rc33'].y
                 except AttributeError:
-                    print 'No "SF Cutoff Rel33" found for cell ',roi.rois[0].params.cell_id
+                    print 'No "SF Cutoff Rel33" found for cell ', roi_id
                     ws.cell(row=idx,column=4).value = None
                     ws.cell(row=idx,column=5).value = None
                 ws.cell(row=idx,column=4).style = style
@@ -234,7 +239,7 @@ class stitched_data(object):
 
             elif unmerge == 1:
                 for i in range(num_sf):
-                    ws.cell(row=idx+i,column=1).value = int(roi.rois[0].params.cell_id)
+                    ws.cell(row=idx+i,column=1).value = roi_id
                     ws.cell(row=idx+i,column=1).style = style
                     ws.cell(row=idx+i,column=2).value = roi.dtanovaalls.first.attributes['value']['f']
                     ws.cell(row=idx+i,column=2).style = style
@@ -244,7 +249,7 @@ class stitched_data(object):
                         ws.cell(row=idx+i,column=4).value = roi.dtsfreqfits.first.attributes['value']['rc33'].x
                         ws.cell(row=idx+i,column=5).value = roi.dtsfreqfits.first.attributes['value']['rc33'].y
                     except AttributeError:
-                        print 'No "SF Cutoff Rel33" found for cell ',roi.rois[0].params.cell_id
+                        print 'No "SF Cutoff Rel33" found for cell ', roi_id
                         ws.cell(row=idx+i,column=4).value = None
                         ws.cell(row=idx+i,column=5).value = None
                     ws.cell(row=idx+i,column=4).style = style
