@@ -28,9 +28,9 @@ def generate_output(sbx, split_chan=False, split_planes=True):
     # Generate filenames based on input parameters
     output_set = {}
     fpath = os.path.dirname(sbx.filename)
-    filename = os.path.basename(sbx.filename)    
+    filename = os.path.basename(sbx.filename)
     for channel in sbx.channels:
-        
+
         if split_chan:
             output_set[channel] = os.path.join(fpath, 'moco_aligned_{}_{}'.format(filename, channel))
         else:
@@ -90,8 +90,9 @@ def generate_output(sbx, split_chan=False, split_planes=True):
             else:
                 mmap_size = np.prod((cols, rows, sbx.info['length']))
         elif len(plane):
+            factor = 2 if len(sbx.channels) > 1 else 1
             plane = plane[0]
-            mmap_size = np.prod(sbx.data()[sbx.channels[0]][plane][:,:,margin:].shape)*2
+            mmap_size = np.prod(sbx.data()[sbx.channels[0]][plane][:,:,margin:].shape) * factor
         else:
             mmap_size = np.prod((cols, rows, sbx.info['length']*sbx.info['nChan']))
         np.memmap(fn, dtype='uint16', mode='w+', shape=mmap_size)
@@ -177,6 +178,8 @@ def kwargs_wrapper(kwargs):
     function(**kwargs)
 
 def generate_visual(filenames, fmt='eps'):
+    import matplotlib
+    matplotlib.use('agg')
     import matplotlib.pyplot as plt # import here to avoid interference with multiprocessing
     '''
     Generates:
@@ -394,7 +397,7 @@ def run():
         generate_visual(filenames)
         print('Done.')
 
-def main():  
+def main():
     if '-a' in sys.argv: # aligns all files in current directory
         raw     = [fn for fn in os.listdir('.') if fn.endswith('.sbx') and 'moco_aligned_' not in fn]
         aligned = [fn for fn in os.listdir('.') if fn.endswith('.sbx') and 'moco_aligned_' in fn]
@@ -404,12 +407,11 @@ def main():
     else:
         raw 	= [sys.argv[1]]
         aligned = []
-
     if '-ignore' in sys.argv: # do not align files with an associated moco aligned file
         initial = len(raw)
         aligned = [a.replace('moco_aligned_', '') for a in aligned]
-        raw = [f for a in aligned for f in raw if f not in a]
-        print ('{} of {} sbx files to be converted'.format(len(raw),initial))  
+        raw = list(set(raw) - set(aligned))
+        print ('{} of {} sbx files to be converted'.format(len(raw),initial))
     if not raw:
         raise ValueError('sbx file not defined or no files found in current directory.')
 
