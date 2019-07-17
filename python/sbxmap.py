@@ -115,7 +115,7 @@ class sbxmap(object):
     def tifsave(self, length=None, rows=None, cols=None, basename=None, rgb=True):
         _depth = Slicer(self.shape[0]) if length == None else Slicer(*length)
         _rows = Slicer(self.shape[1]) if rows == None else Slicer(*rows)
-        _cols = Slicer(self.shape[2]) if rows == None else Slicer(*cols)
+        _cols = Slicer(self.shape[2]) if cols == None else Slicer(*cols)
 
         if _depth.length > self.shape[0] or _rows.length > self.shape[1] or _cols.length > self.shape[2]:
             raise ValueError('Cropped dimensions cannot be larger than original dimensions.')
@@ -206,5 +206,5 @@ def write(sbx, filename=None, _depth=None, _rows=None, _cols=None, indices=None)
             channel = sbx.channels[0]
         tif_input = sbx.data()[channel][plane]
         for i in indices:
-            tif_output[i] = ~tif_input[i]
+            tif_output[i] = ~tif_input[i][_rows.index, _cols.index]
 
