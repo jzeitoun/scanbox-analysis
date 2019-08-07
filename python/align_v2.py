@@ -50,6 +50,9 @@ def generate_output(sbx, split_chan=False, split_planes=True):
     # Generate metadata files (.mat)
     meta = lmat.loadmat(sbx.filename + '.mat')
     meta['info']['resfreq'] = meta['info']['resfreq'] // sbx.num_planes
+    mesoscope_fields = meta['info'].get('mesoscope').get('roi_table')
+    if split_planes and not isinstance(mesoscope_fields, type(None)):
+        meta['info'].get('mesoscope').pop('roi_table')
     if not meta['info']['scanmode']:
         meta['info']['sz'][1] = meta['info']['sz'][1] - 100
     for channel, plane_data in output_set.items():
@@ -167,7 +170,7 @@ def run_parallel(params, num_cpu):
         status.update(i)
 
 def run_serial(params_set):
-    status = Statusbar(len(params_set), 50)
+    status = Statusbar(len(params_set), barsize=50)
     status.initialize()
     for i,params in enumerate(params_set, 1):
         kwargs_wrapper(params)
@@ -355,6 +358,7 @@ def run():
     # Save translations to disk
     fpath = os.path.dirname(sbx.filename)
     filename = os.path.basename(sbx.filename)
+
     translations_filename = os.path.join(fpath, 'moco_aligned_{}_translations'.format(filename))
     np.save(translations_filename, globe.translations)
     translations_file.close()
