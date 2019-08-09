@@ -7,6 +7,7 @@ import os
 import stat
 import sys
 import tempfile
+from difflib import SequenceMatcher
 
 from setproctitle import setproctitle
 import moco_v2
@@ -50,7 +51,10 @@ def generate_output(sbx, split_chan=False, split_planes=True):
     # Generate metadata files (.mat)
     meta = lmat.loadmat(sbx.filename + '.mat')
     meta['info']['resfreq'] = meta['info']['resfreq'] // sbx.num_planes
-    mesoscope_fields = meta['info'].get('mesoscope').get('roi_table')
+    try:
+        mesoscope_fields = meta['info'].get('mesoscope').get('roi_table')
+    except:
+        mesoscope_fields =  None
     if split_planes and not isinstance(mesoscope_fields, type(None)):
         meta['info'].get('mesoscope').pop('roi_table')
     if not meta['info']['scanmode']:
@@ -189,7 +193,14 @@ def generate_visual(filenames, fmt='eps'):
         1. A plot of translation vs time for both x and y for each plane.
         2. A set of X-T and Y-T slices for each plane.
     '''
-    common_basename = '_'.join(filenames[0].split('.')[0].split('_'))
+
+    if len(filenames) > 1:
+        match = SequenceMatcher(None, filenames[0], filenames[1]).find_longest_match(0, len(filenames[0]), 0, len(filenames[1]))
+        common_basename = filenames[0][match.a : match.b + match.size]
+        common_basename = common_basename.replace('_plane_', '')
+    else:
+        common_basename = '_'.join(filenames[0].split('.')[0].split('_'))
+
     translations = np.load('{}_translations.npy'.format(common_basename)).tolist()
 
     # Map data for X-T + Y-T slices
@@ -224,8 +235,12 @@ def generate_visual(filenames, fmt='eps'):
     for plane,translations_set in translations.items():
 
         # Extract translations
-        x = np.int64(translations_set[:,1])
-        y = np.int64(translations_set[:,2])
+        translations_set_x = translations_set[:,1]
+        translations_set_x = translations_set_x[translations_set_x != b'']
+        x = np.int64(translations_set_x)
+        translations_set_y = translations_set[:,2]
+        translations_set_y = translations_set_y[translations_set_y != b'']
+        y = np.int64(translations_set_y)
 
         # Plot and save x translations
         xfig = plt.figure()

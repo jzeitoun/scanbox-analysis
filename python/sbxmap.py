@@ -15,7 +15,10 @@ class sbxmap(object):
 
     @property
     def num_planes(self):
-        mesoscope_fields = self.info.get('mesoscope').get('roi_table')
+        try:
+            mesoscope_fields = self.info.get('mesoscope').get('roi_table')
+        except:
+            mesoscope_fields = None
         if not isinstance(mesoscope_fields, type(None)):
             return len(mesoscope_fields)
         elif 'otparam' in self.info:
