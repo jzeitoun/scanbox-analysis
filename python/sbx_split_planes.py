@@ -18,6 +18,8 @@ def main(filename):
     except:
         pass
 
+    meta['resfreq'] = meta['resfreq'] / sbx.num_planes
+
     for plane in range(sbx.num_planes):
         output_basename = sbx.filename + '_plane_{}'.format(plane)
         channel_data = [{'channel': channel, 'data': sbx.data()[channel]['plane_{}'.format(plane)]} for channel in sbx.channels]
