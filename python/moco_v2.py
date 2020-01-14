@@ -182,8 +182,8 @@ def align(source_name, sink_name, templates, cur_plane, channel, indices, w=15):
             b = out.real
 
             grid = np.zeros([(rows+w) - (rows-w-1), (cols+w) - (cols-w-1)])
-            h_gridWidth = grid.shape[0] / 2
-            h_gridHeight = grid.shape[1] / 2
+            h_gridWidth = grid.shape[0] // 2
+            h_gridHeight = grid.shape[1] // 2
 
             r1 = np.arange(rows-w-1, rows-1)
             c1 = np.arange(cols-w-1, cols-1)
@@ -212,9 +212,9 @@ def align(source_name, sink_name, templates, cur_plane, channel, indices, w=15):
             xy = 2 * xy
 
             rows, cols = moving.shape
-            cx = rows / 250
+            cx = rows // 250
             cx = 1 if cx < 1 else cx
-            cy = cols / 150
+            cy = cols // 150
             rx = np.float64(np.arange(cx))
             ry = np.float64(np.arange(cy))
             rxb = np.rint((rx*rows/cx)+1)

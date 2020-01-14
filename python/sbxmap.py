@@ -20,7 +20,7 @@ class sbxmap(object):
         except:
             mesoscope_fields = None
         if not isinstance(mesoscope_fields, type(None)):
-            return len(mesoscope_fields)
+            return 1 or len(mesoscope_fields)
         elif 'otparam' in self.info:
             return self.info['otparam'][2] if self.info['otparam'] != [] else 1
         else:
@@ -127,7 +127,8 @@ class sbxmap(object):
             raise ValueError('Cropped dimensions cannot be larger than original dimensions.')
 
         basename = self.filename if basename == None else os.path.splitext(basename)[0]
-        num_cpu = multiprocessing.cpu_count()
+        #num_cpu = multiprocessing.cpu_count()
+        num_cpu = 1 # To work with node and lizardfs
         all_indices = np.arange(_depth.start,_depth.stop)
         num_tasks = len(all_indices) / 10
         idx_set = np.array_split(all_indices, num_tasks)
@@ -177,6 +178,7 @@ class sbxmap(object):
             status.initialize()
             for i,_ in enumerate(pool.imap_unordered(kwargs_wrapper, params), 1):
                 status.update(i)
+            pool.close()
             print('\nDone.')
 
 class Noop_sbxmap(sbxmap):

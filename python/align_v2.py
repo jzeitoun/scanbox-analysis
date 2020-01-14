@@ -7,9 +7,13 @@ import os
 import stat
 import sys
 import tempfile
+import shutil
+from pathlib import Path
+from setproctitle import setproctitle
+
 from difflib import SequenceMatcher
 
-from setproctitle import setproctitle
+
 import moco_v2
 import loadmat as lmat
 from sbxmap import sbxmap
@@ -172,6 +176,7 @@ def run_parallel(params, num_cpu):
     status.initialize()
     for i,_ in enumerate(pool.imap_unordered(kwargs_wrapper, params), 1):
         status.update(i)
+    pool.close()
 
 def run_serial(params_set):
     status = Statusbar(len(params_set), barsize=50)
@@ -256,12 +261,12 @@ def generate_visual(filenames, fmt='eps'):
 
 def run():
     setproctitle('moco')
-    oldmask = os.umask(007)
+    oldmask = os.umask(0o007)
     sbx = sbxmap(sys.argv[0])
     print('Aligning {}.sbx'.format(sbx.filename))
 
     # Default arguments
-    num_cpu = multiprocessing.cpu_count()/2 # physical
+    num_cpu = multiprocessing.cpu_count()//2 # physical
     align_channel = 'red'
     visualize = False
     w = 15
@@ -416,13 +421,31 @@ def run():
         generate_visual(filenames)
         print('Done.')
 
+def copyfileobj(fsrcname, fdstname, callback, length=16*1024):
+    with open(fsrcname) as fsrc, open(fdstname, 'w+') as fdst:
+        fsize = os.path.getsize(fsrcname)
+        copied = 0
+        while True:
+            buf = fsrc.buffer.read(length)
+            if not buf:
+                break
+            fdst.buffer.write(buf)
+            copied += len(buf)
+            percent = copied/fsize*100
+            callback(percent)
+
+def displayProgressPercent(val):
+    sys.stdout.write('\r')
+    sys.stdout.write('Copying File: {:.2f}%'.format(val))
+    sys.stdout.flush()
+
 def main():
     if '-a' in sys.argv: # aligns all files in current directory
         raw     = [fn for fn in os.listdir('.') if fn.endswith('.sbx') and 'moco_aligned_' not in fn]
         aligned = [fn for fn in os.listdir('.') if fn.endswith('.sbx') and 'moco_aligned_' in fn]
     elif '-r' in sys.argv: # aligns all files in current directory recursivly
-        raw     = [os.path.join(root, fn) for root, dirs, files in os.walk(os.getcwd()) for fn in files if fn.endswith('.sbx') and 'moco_aligned_' not in fn]  
-        aligned = [os.path.join(root, fn) for root, dirs, files in os.walk(os.getcwd()) for fn in files if fn.endswith('.sbx') and 'moco_aligned_' in fn]   
+        raw     = [os.path.join(root, fn) for root, dirs, files in os.walk(os.getcwd()) for fn in files if fn.endswith('.sbx') and 'moco_aligned_' not in fn]
+        aligned = [os.path.join(root, fn) for root, dirs, files in os.walk(os.getcwd()) for fn in files if fn.endswith('.sbx') and 'moco_aligned_' in fn]
     else:
         raw 	= [sys.argv[1]]
         aligned = []
@@ -436,14 +459,44 @@ def main():
 
     print('Batch processing: {} sbx files'.format(len(raw)))
     for i,f in enumerate(raw):
+        fname = Path(f)
         print('Aligning file {} of {}'.format(i+1, len(raw)))
         sys.argv[0] = f # messy way because run() only knows which file by position in sys.argv
         if '-debug' in sys.argv:
             from ipdb import launch_ipdb_on_exception
             sys.argv.append('-serial')
             with launch_ipdb_on_exception():
-                run() 
+                tmpdir = tempfile.TemporaryDirectory(dir='/mnt/swap')
+                tempf = os.path.join(tmpdir.name, fname)
+                shutil.copy(fname.with_suffix('.mat'), tmpdir.name)
+                copyfileobj(f, tempf, displayProgressPercent)
+                cwd = os.getcwd()
+                os.chdir(tmpdir.name)
+
+                run()
+
+                os.chdir(cwd)
+                alignedf = Path('moco_aligned_' + f)
+                outf = os.path.join(tmpdir.name, alignedf)
+                shutil.copy(os.path.join(tmpdir.name, alignedf.with_suffix('.mat')), cwd)
+                copyfileobj(outf, alignedf, displayProgressPercent)
+                tmpdir.cleanup()
         else:
+            tmpdir = tempfile.TemporaryDirectory(dir='/mnt/swap')
+            tempf = os.path.join(tmpdir.name, fname)
+            shutil.copy(fname.with_suffix('.mat'), tmpdir.name)
+            copyfileobj(f, tempf, displayProgressPercent)
+            cwd = os.getcwd()
+            os.chdir(tmpdir.name)
+
             run()
+
+            os.chdir(cwd)
+            alignedf = Path('moco_aligned_' + f)
+            outf = os.path.join(tmpdir.name, alignedf)
+            shutil.copy(os.path.join(tmpdir.name, alignedf.with_suffix('.mat')), cwd)
+            copyfileobj(outf, alignedf, displayProgressPercent)
+            tmpdir.cleanup()
+
 if __name__ == '__main__':
     main()

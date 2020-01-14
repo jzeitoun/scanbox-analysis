@@ -16,7 +16,7 @@ class Statusbar(object):
         Total number of bars to use for length of progress bar. Default is
         50.
     mem_monitor: bool, optional
-        Include a display of available memory and abort execution if 
+        Include a display of available memory and abort execution if
         available memory drops below threshold.
     mem_thresh: int, optional
         If available memory drops below this level, execution is aborted.
