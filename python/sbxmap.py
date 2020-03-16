@@ -15,9 +15,6 @@ class sbxmap(object):
 
     @property
     def num_planes(self):
-
-        import ipdb; ipdb.set_trace()
-
         try:
             #mesoscope_fields = self.info.get('mesoscope').get('roi_table')
             mesoscope_enabled = self.info.get('mesoscope').get('enabled')
