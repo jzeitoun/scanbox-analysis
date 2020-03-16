@@ -15,14 +15,22 @@ class sbxmap(object):
 
     @property
     def num_planes(self):
+
+        import ipdb; ipdb.set_trace()
+
         try:
-            mesoscope_fields = self.info.get('mesoscope').get('roi_table')
+            #mesoscope_fields = self.info.get('mesoscope').get('roi_table')
+            mesoscope_enabled = self.info.get('mesoscope').get('enabled')
         except:
-            mesoscope_fields = None
-        if not isinstance(mesoscope_fields, type(None)):
-            return 1 or len(mesoscope_fields)
+            #mesoscope_fields = None
+            mesoscope_enabled = False
+
+        #if not isinstance(mesoscope_fields, type(None)):
+        if mesoscope_enabled:
+            return 1 or len(self.info.get('mesoscope').get('roi_table'))
         elif 'otparam' in self.info:
-            return self.info['otparam'][2] if self.info['otparam'] != [] else 1
+            otparam = self.info['otparam']
+            return otparam[2] if self.info['otparam'] != [] and not np.isnan(otparam[2]) else 1
         else:
             return 1
     @property
@@ -196,7 +204,8 @@ def kwargs_wrapper(kwargs):
 def write(sbx, filename=None, _depth=None, _rows=None, _cols=None, indices=None):
     tif_output = tif.tifffile.memmap(filename)
     if sbx.num_planes > 1 and 'plane' in filename:
-        plane = re.findall('plane_[0-9]{1}', filename)[0]
+        plane = re.findall('plane_[0-9]{1,2}', filename)[0]
+        print(plane)
     else:
         plane = 'plane_0'
     dimensions = tif_output.shape
