@@ -24,7 +24,9 @@ class sbxmap(object):
 
         #if not isinstance(mesoscope_fields, type(None)):
         if mesoscope_enabled:
-            return 1 or len(self.info.get('mesoscope').get('roi_table'))
+            roi_table = self.info.get('mesoscope').get('roi_table')
+            res = len(roi_table) if not isinstance(roi_table, type(None)) else 1
+            return res
         elif 'otparam' in self.info:
             otparam = self.info['otparam']
             return otparam[2] if self.info['otparam'] != [] and not np.isnan(otparam[2]) else 1
